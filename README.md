@@ -24,3 +24,8 @@ operate with your variables, analyze them, etc. Note however that
 any changes you make to values while in the shell do not propagate
 back to the running code, so it is safe to modify your values because
 you won’t break your code in bizarre ways by doing so.
+
+
+- **00_plot_vaisala_edinc_ES7936.py**
+Rotina para plot de dados provenientes da Vaisala. Uso do tkinter para gerar
+a figura dos dados recebidos via porta serial.
