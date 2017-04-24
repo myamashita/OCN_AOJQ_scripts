@@ -29,3 +29,7 @@ you won’t break your code in bizarre ways by doing so.
 - **00_plot_vaisala_edinc_ES7936.py**
 Rotina para plot de dados provenientes da Vaisala. Uso do tkinter para gerar
 a figura dos dados recebidos via porta serial.
+
+
+- **Check_ADCP_PROD.py**
+Rotina para checar dados de ADCP no bando de dados de PRODUÇÃO. Em progresso...
