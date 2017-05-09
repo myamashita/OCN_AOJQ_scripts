@@ -10,6 +10,7 @@ Permite escolha de colormap para plot da intensidade e direção.
 Rotina para encontrar ID das UCDs.
 Com a interface aberta necessário escolher o Banco e UCD para consulta.
 
+![image](https://cloud.githubusercontent.com/assets/12679001/25863331/e8289f8e-34c1-11e7-8c5a-bbe84fcc5271.gif)
 
 - **PyConfronto.py**
 Rotina para gerar representações gráficas de confronto de dados 
