@@ -30,8 +30,10 @@ class ADCP_PROD:
         # Janela gráfica de origem da aplicação.
         self._root = root
         # Bancos de dados disponíveis e chaves criptografadas de acesso.
-        self._dbs = OrderedDict([(u"PROD", pyocnp.PROD_DBACCESS),
-                                 (u"DESV", pyocnp.DESV_DBACCESS)])
+        self._dbs = OrderedDict([(u"PROD", {'rede': '\\\\OCNBC',
+                                            'chave': pyocnp.PROD_DBACCESS}),
+                                 (u"DESV", {'rede': '\\\\SBCNAS03',
+                                            'chave': pyocnp.DESV_DBACCESS})])
         # Instância do BD.
         self._DBVIEW = u"UE6RK"
         # Opções de Parâmetros
@@ -165,15 +167,15 @@ class ADCP_PROD:
         self._fdathbup = tki.Button(self._datefrm, bd=1, text=u"\u25B2",
                                     font=('Default', '5', 'bold'),
                                     command=lambda df=self._fdate:
-                                    df.set(df.get()+1))
+                                    df.set(df.get() + 1))
         self._fdathbup.grid(column=7, row=1, padx=0, pady=0, sticky=tki.S)
 
         # decremento (em horas)
         self._fdathbdw = tki.Button(self._datefrm, bd=1, text=u"\u25BC",
                                     font=('Default', '5', 'bold'),
                                     command=lambda df=self._fdate:
-                                    df.set(df.get()-1 if df.get() > 0
-                                           else df.set(df.get()+0)))
+                                    df.set(df.get() - 1 if df.get() > 0
+                                           else df.set(df.get() + 0)))
         self._fdathbdw.grid(column=7, row=2, padx=0, pady=0, sticky=tki.N)
 
         self._idate.trace("w", lambda vn, en, md, dn=self._idatent:
@@ -213,7 +215,8 @@ class ADCP_PROD:
 
         # Menu de BDs disponíveis para consulta.
         self._db_opt = tki.OptionMenu(self._opt_Sfrm, self._db_var,
-                                      *self._dbs.keys())
+                                      *self._dbs.keys(), command=self.clear_opt)
+        self._db_opt.configure(width=11)
         self._db_opt.grid(column=1, row=1, rowspan=1, padx=4, pady=0,
                           sticky=tki.NSEW)
 
@@ -224,14 +227,15 @@ class ADCP_PROD:
                                        font=('Verdana', '9', 'bold'),
                                        relief=tki.FLAT, justify=tki.CENTER)
         self._opt_Sfrm_arq.grid(column=0, row=2, rowspan=1,
-                                padx=2, pady=2, sticky=tki.NSEW)
+                                padx=2, pady=2, sticky=tki.EW)
 
         # Variável mutante do Arquivos
         self._arq_var = tki.StringVar()
 
         # Menu de Arquivos disponíveis para consulta.
         self._arq_opt = tki.OptionMenu(self._opt_Sfrm, self._arq_var,
-                                       *self._modapp.keys())
+                                       *self._modapp.keys(),
+                                       command=self.change_arq)
         self._arq_opt.grid(column=1, row=2, rowspan=1, padx=4, pady=0,
                            sticky=tki.NSEW)
 
@@ -265,18 +269,15 @@ class ADCP_PROD:
         # Listagem de UCDs disponíveis para consulta.
         self._ucdslbx = tki.Listbox(self._opt_Sfrm, bd=1, activestyle='none',
                                     selectmode=tki.MULTIPLE, setgrid=tki.NO,
-                                    height=1, selectborderwidth=3, width=15,
+                                    height=4, selectborderwidth=2, width=13,
                                     exportselection=tki.FALSE,
                                     selectbackground=rgb2hex(BGCOLORSLT),
-                                    font=('Verdana', '11', 'bold'))
+                                    font=('Verdana', '9'))
         self._ucdslbx.grid(column=1, row=4, rowspan=2, padx=0, pady=0,
                            sticky=tki.NS)
 
         # Menu de UCDs para consulta facilitada.
         self._ucdsmenub = tki.Menu(self._root, tearoff=0)
-
-
-
 
         self._mainfrm.pack(fill=tki.BOTH, padx=0, pady=0, side=tki.TOP)
 
@@ -302,11 +303,20 @@ class ADCP_PROD:
         except:
             return(datetime.utcnow().strftime(u"%d/%m/%Y %H:00:00"))
 
+    def clear_opt(self, dbvalue):
+        u"""Limpar campos BACIA e UCDs"""
+        self._ucdslbx.delete(0, tki.END)
+        self._bacia_var.set('')
+
+    def change_arq(self, value):
+        u"""Update listbox na troca de Arquivo"""
+        if self._bacia_var.get() != '':
+            self.askucds(dbvalue=self._bacia_var.get())
+
     def askucds(self, dbvalue):
         u""" Listar UCDs disponíveis para consulta no BD. """
         # Limpeza do menu de UCDs Controle
         self._ucdslbx.delete(0, tki.END)
-        ipsh()
         dbs = self._dbs[self._db_var.get()]
         eqp = self._modapp[self._arq_var.get()]
         # Requisição das UCDs ao BD #
@@ -328,24 +338,48 @@ class ADCP_PROD:
                      " UE6RK.TB_LOCAL_INSTAL.REGI_CD_REGIAO =" +
                      unicode(self._rgs[dbvalue]) +
                      " AND"
+                     " UE6RK.TB_PARAMETROS_INST.PAIN_TX_PATH_ARQ"
+                     " LIKE '" + unicode(dbs['rede']) + "%'"
+                     " AND"
+                     " UE6RK.TB_PARAMETROS_INST.EQUI_CD_EQUIPAMENT =" +
+                     unicode(eqp) +
+                     " ORDER BY"
+                     " TB_LOCAL_INSTAL.LOIN_TX_LOCAL")
+            ucds_ok = pyocnp.odbqry_all(dbqry,
+                                        pyocnp.asciidecrypt(dbs['chave']))
+            dbqry = ("SELECT"
+                     " TB_LOCAL_INSTAL.LOIN_CD_LOCAL,"
+                     " UNISTR(TB_LOCAL_INSTAL.LOIN_TX_LOCAL)"
+                     " FROM"
+                     " UE6RK.TB_LOCAL_INSTAL"
+                     " LEFT JOIN"
+                     " UE6RK.TB_PARAMETROS_INST"
+                     " ON"
+                     " UE6RK.TB_LOCAL_INSTAL.LOIN_CD_LOCAL ="
+                     " UE6RK.TB_PARAMETROS_INST.LOIN_CD_LOCAL"
+                     " WHERE"
+                     " UE6RK.TB_LOCAL_INSTAL.REGI_CD_REGIAO =" +
+                     unicode(self._rgs[dbvalue]) +
+                     " AND"
                      " UE6RK.TB_PARAMETROS_INST.EQUI_CD_EQUIPAMENT =" +
                      unicode(eqp) +
                      " ORDER BY"
                      " TB_LOCAL_INSTAL.LOIN_TX_LOCAL")
             ucds = pyocnp.odbqry_all(dbqry,
-                                     pyocnp.asciidecrypt(dbs))
+                                     pyocnp.asciidecrypt(dbs['chave']))
         except:
             # Atualização de status: BD inacessivel.
-            #self._msg.set(u'%s INDISPONÍVEL' % self._db_opt.get())
+            # self._msg.set(u'%s INDISPONÍVEL' % self._db_opt.get())
             raise
         # Oferta da lista de UCDs disponíveis.
         self._ucds = ucds
+
         for lstid, lstnm in ucds:
             self._ucdslbx.insert(tki.END, lstnm)
+            [self._ucdslbx.selection_set(tki.END) for x, y in ucds_ok if x==int(lstid)]
 
         # Oferta e atualização do menu de UCDs.
         self._ucdsmenuvars = list()
-
         self.menuaval(self._ucdsmenub, self._Sfrm_ucdsmenu,
                       self._ucdslbx, self._ucdsmenuvars)
 
@@ -354,7 +388,6 @@ class ADCP_PROD:
 
     def popupmenu(self, event, menu, menubt, lbxmain, lstvars):
         """ Exibir menu facilitado para seleção. """
-
         # Nomenclaturas na listagem disponível.
         lbxlst = lbxmain.get(0, tki.END)
 
@@ -375,7 +408,6 @@ class ADCP_PROD:
         lbxlst = lbxmain.get(0, tki.END)
         # Oferta e atualização do menu.
         menu.delete(0, tki.END)
-
         for itemidx, item in enumerate(lbxlst):
             # Variável mutante de seleção.
             lstvars.append(tki.IntVar())
@@ -395,6 +427,7 @@ class ADCP_PROD:
         menubt.bind("<Button-1>", lambda ev, pp=self.popupmenu, mn=menu,
                     mnb=menubt, lb=lbxmain, lv=lstvars:
                         pp(ev, mn, mnb, lb, lv))
+
 
 def main():
     u""" Função principal para chamar tk. """
