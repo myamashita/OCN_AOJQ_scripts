@@ -826,7 +826,7 @@ class UCD_confronto:
                                   Data_control['data0unit'])
                 self.ax0.yaxis.set_visible(False)
                 lgnd.append(Data_teste['tag'] +
-                            ' @ %s' % self._db_ctrl_var.get())
+                            ' @ %s' % self._db_teste_var.get())
                 self.setaxdate(fig.axes[0], self.df.index.min(),
                                self.df.index.max())
                 self.ax.legend((self.ax.axes.get_lines()[0],
@@ -835,7 +835,7 @@ class UCD_confronto:
             else:
                 self.ax0.plot(Data_teste['t'], Data_teste['data0'], '.-r')
                 lgnd.append(Data_teste['tag'] +
-                            ' @ %s' % self._db_ctrl_var.get())
+                            ' @ %s' % self._db_teste_var.get())
                 self.ax0.legend((self.ax.axes.get_lines()[0],
                                  self.ax0.axes.get_lines()[0]), lgnd,
                                 framealpha=0.6, loc=0)
@@ -1123,6 +1123,7 @@ class UCD_confronto:
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO,"
                          " AVG(UE6RK.TB_YOUNG_ST.YOST_VL_IWDIR_AN_2) +"
                          " AVG(UE6RK.TB_YOUNG_MESTRE.YOME_VL_OFFS_ANE_2),"
+                         " AVG(UE6RK.TB_YOUNG_MESTRE.YOME_VL_APROA),"
                          " AVG(UE6RK.TB_YOUNG_MESTRE.YOME_VL_SIN_APROA),"
                          " MAX(UE6RK.TB_YOUNG_MESTRE.YOME_IN_GIRO_ANE2)"
                          " FROM"
@@ -1151,9 +1152,13 @@ class UCD_confronto:
                 else:
                     Data = pyocnp.OcnpRootData()
                     for i, j in enumerate(qryarray[:, -1]):
-                        qryarray[i, 1] = (qryarray[i, 1] +
-                                          qryarray[i, 2]) % \
-                            360 if j == 'S' else qryarray[i, 1]
+                        if qryarray[i, 1] !=None:
+                            qryarray[i, 1] = (qryarray[i, 1] +
+                                              qryarray[i, 2] +
+                                              qryarray[i, 3]) % \
+                                360 if j == 'S' else (qryarray[i, 1] +
+                                                      qryarray[i, 2]) % \
+                                360
                     Data.put(u't', qryarray[:, 0])
                     Data.put(u'tag', tag)
                     Data.put(u'data0', qryarray[:, 1])
