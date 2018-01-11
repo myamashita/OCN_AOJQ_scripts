@@ -2,7 +2,7 @@
 __authors__ = ["Márcio Katsumi Yamashita"]
 __email__ = ["marcio.yamashita.ambidados@petrobras.com.br"]
 __created_ = ["05-Jan-2017"]
-__modified__ = ["26-Fev-2017 "]
+__modified__ = ["11-Jan-2018 "]
 
 import Tkinter as tki
 import pyocnp
@@ -762,7 +762,6 @@ class UCD_confronto:
         fig = plt.figure(1, facecolor=(1.0, 1.0, 1.0), figsize=(12, 8))
         self.ax = fig.add_subplot(1, 1, 1)
         self.ax.grid('on')
-        self.ax0 = self.ax.twinx()
 
         # Diagramação e exibição da figura.
         fig.show()
@@ -808,10 +807,6 @@ class UCD_confronto:
                         ' @ %s' % self._db_ctrl_var.get())
             self.ax.set_ylabel(Data_control['data0quant'] + u" (" +
                                Data_control['data0unit'] + u")", fontsize=12)
-            self.ax0.set_ylabel(Data_teste['data0quant'] + u" (" +
-                                Data_teste['data0unit'] + u")", fontsize=12,
-                                color='red')
-            self.ax0.tick_params(axis='y', colors='red')
             self.df = DataFrame({'CTRL': Series(Data_control['data0'],
                                                 index=Data_control['t']),
                                  'TESTE': Series(Data_teste['data0'],
@@ -824,7 +819,6 @@ class UCD_confronto:
                                   % (self.df['diff'].mean(),
                                      self.df['diff'].std()) +
                                   Data_control['data0unit'])
-                self.ax0.yaxis.set_visible(False)
                 lgnd.append(Data_teste['tag'] +
                             ' @ %s' % self._db_teste_var.get())
                 self.setaxdate(fig.axes[0], self.df.index.min(),
@@ -833,6 +827,11 @@ class UCD_confronto:
                                 self.ax.axes.get_lines()[1]), lgnd,
                                framealpha=0.6, loc=0)
             else:
+                self.ax0 = self.ax.twinx()
+                self.ax0.tick_params(axis='y', colors='red')
+                self.ax0.set_ylabel(Data_teste['data0quant'] + u" (" +
+                    Data_teste['data0unit'] + u")", fontsize=12,
+                    color='red')
                 self.ax0.plot(Data_teste['t'], Data_teste['data0'], '.-r')
                 lgnd.append(Data_teste['tag'] +
                             ' @ %s' % self._db_teste_var.get())
@@ -857,7 +856,6 @@ class UCD_confronto:
                         ' @ %s' % self._db_ctrl_var.get())
             self.ax.set_ylabel(Data_control['data0quant'] + u" (" +
                                Data_control['data0unit'] + u")", fontsize=12)
-            self.ax0.yaxis.set_visible(False)
             self.ax.legend(lgnd, framealpha=0.6, loc=0)
             if self._param_ctrl_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
@@ -871,12 +869,11 @@ class UCD_confronto:
             lgnd.append(Data_teste['tag'] + ' @ %s' % self._db_ctrl_var.get())
             self.ax.set_ylabel(Data_teste['data0quant'] + u" (" +
                                Data_teste['data0unit'] + u")", fontsize=12)
-            self.ax0.yaxis.set_visible(False)
             self.ax.legend(lgnd, framealpha=0.6, loc=0)
             if self._param_teste_var.get()[:3] == "Dir":
-                self.ax0.set_ylim((0., 360.))
+                self.ax.set_ylim((0., 360.))
             if self._param_teste_var.get()[:3] == "Bar":
-                (self.ax0.get_yaxis().set_major_formatter(
+                (self.ax.get_yaxis().set_major_formatter(
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
             self.setaxdate(fig.axes[0], Data_teste['t'].min(),
                            Data_teste['t'].max())
