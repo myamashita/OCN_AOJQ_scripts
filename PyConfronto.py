@@ -2,7 +2,7 @@
 __authors__ = ["Márcio Katsumi Yamashita"]
 __email__ = ["marcio.yamashita.ambidados@petrobras.com.br"]
 __created_ = ["05-Jan-2017"]
-__modified__ = ["11-Jan-2018 "]
+__modified__ = ["25-Jan-2018 "]
 
 import Tkinter as tki
 import pyocnp
@@ -838,10 +838,10 @@ class UCD_confronto:
                 self.ax0.legend((self.ax.axes.get_lines()[0],
                                  self.ax0.axes.get_lines()[0]), lgnd,
                                 framealpha=0.6, loc=0)
+                if self._param_teste_var.get()[:3] == "Dir":
+                    self.ax0.set_ylim((0., 360.))
             if self._param_ctrl_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
-            if self._param_teste_var.get()[:3] == "Dir":
-                self.ax0.set_ylim((0., 360.))
             if self._param_ctrl_var.get()[:3] == "Bar":
                 (self.ax.get_yaxis().set_major_formatter(
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
@@ -1149,13 +1149,19 @@ class UCD_confronto:
                 else:
                     Data = pyocnp.OcnpRootData()
                     for i, j in enumerate(qryarray[:, -1]):
-                        if qryarray[i, 1] !=None:
+                        if (qryarray[i, 1] !=None) & (qryarray[i, 3] !=None):
                             qryarray[i, 1] = (qryarray[i, 1] +
                                               qryarray[i, 2] +
                                               qryarray[i, 3]) % \
                                 360 if j == 'S' else (qryarray[i, 1] +
                                                       qryarray[i, 2]) % \
                                 360
+                        else:
+                            qryarray[i, 1] = (qryarray[i, 1] +
+                                              qryarray[i, 2]) % \
+                                360 if j == 'S' else (qryarray[i, 1] +
+                                                      qryarray[i, 2]) % \
+                                360                          
                     Data.put(u't', qryarray[:, 0])
                     Data.put(u'tag', tag)
                     Data.put(u'data0', qryarray[:, 1])
