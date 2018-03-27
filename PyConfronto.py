@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 __authors__ = ["Márcio Katsumi Yamashita"]
-__email__ = ["marcio.yamashita.ambidados@petrobras.com.br"]
+__email__ = ["marcio.yamashita.tetra_tech@petrobras.com.br"]
 __created_ = ["05-Jan-2017"]
-__modified__ = ["25-Jan-2018 "]
+__modified__ = ["20-Mar-2018 "]
 
 import Tkinter as tki
 import pyocnp
@@ -30,7 +30,6 @@ class UCD_confronto:
         BGCOLORAPL = (0.392, 0.584, 0.929)
         BGCOLORSLT = (0.031, 0.572, 0.815)
         TXCOLORSTD = (0.000, 0.000, 0.000)  # texto padrão (preto)
-
         # Definição de Atributos ===================================== #
         # ============================================================ #
         # Janela gráfica de origem da aplicação.
@@ -47,35 +46,59 @@ class UCD_confronto:
                               (3, u"FSI-2D"),
                               (4, u"FSI-3D"),
                               (2, u"ADCP"),
-                              (15, u"HADCP")]}),
+                              (15, u"HADCP")],
+                u"limite": 0.5}),
             (u"Dir. Correntes", {
                 u"sensores": [(71, u"AQUADOPP"),
                               (3, u"FSI-2D"),
                               (4, u"FSI-3D"),
                               (2, u"ADCP"),
-                              (15, u"HADCP")]}),
+                              (15, u"HADCP")],
+                u"limite": 10}),
             (u"Alt. Ondas", {
                 u"sensores": [(4, u"FSI-3D"),
-                              (5, u"MIROS")]}),
+                              (5, u"MIROS")],
+                u"limite": 0.5}),
             (u"Dir. Ondas", {
                 u"sensores": [(4, u"FSI-3D"),
-                              (5, u"MIROS")]}),
+                              (5, u"MIROS")],
+                u"limite": 20}),
             (u"Int. anem #1", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 3}),
             (u"Dir. anem #1", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 15}),
             (u"Int. anem #2", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 3}),
             (u"Dir. anem #2", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 15}),
             (u"Baro #1", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 1}),
             (u"Baro #2", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 1}),
             (u"Temp", {
-                u"sensores": [(1, u"YOUNG")]}),
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 2}),
             (u"Umid", {
-                u"sensores": [(1, u"YOUNG")]})])
+                u"sensores": [(1, u"YOUNG")],
+                u"limite": 5})])
+
+        # Perfis de usuário.
+        self._userprof = OrderedDict([
+            (1, {u"perfil": u"PADRÃO",
+                 # fundo principal aplicativo
+                 u"BGCOLORAPL": (0.750, 0.750, 0.750),
+                 }),
+            (2, {u"perfil": u"QUALIFICAÇÃO",
+                 # fundo principal aplicativo
+                 u"BGCOLORAPL": (0.392, 0.584, 0.929),
+                 }),
+        ])
 
         # Frame Principal ============================================ #
         # ============================================================ #
@@ -91,6 +114,22 @@ class UCD_confronto:
                          (rt.destroy(), plt.close('all')))
         self._menubar.add_cascade(label=u"Arquivo", menu=menu)
 
+        # Barra/menu "Perfil".
+        self._usergroup = tki.IntVar(value=1)
+        uop = self._userprof[self._usergroup.get()]
+        menu = tki.Menu(self._menubar, tearoff=0)
+        for userid, userprof in self._userprof.iteritems():
+            menu.add_radiobutton(
+                label=userprof[u"perfil"],
+                value=userid,
+                variable=self._usergroup,
+                command=self.setuserprof)
+        self._menubar.add_cascade(label=u"Perfil", menu=menu)
+        menu.add_separator()
+        self._lim = tki.BooleanVar()
+        menu.add_checkbutton(label=u"Alterar Limites",
+                             variable=self._lim,
+                             command=self.setuplimits)
         # Associação da barra de opções ao frame principal.
         self._mainfrm.master.config(menu=self._menubar)
 
@@ -99,12 +138,12 @@ class UCD_confronto:
         # ============================================================ #
         self._dtfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORAPL),
                                 bd=2, relief=tki.GROOVE)
-        self._dtfrm.pack(fill=tki.X, padx=6, pady=4, side=tki.TOP)
+        self._dtfrm.pack(fill=tki.BOTH, padx=6, pady=4, side=tki.TOP)
 
         # Subframe de Período #
         # ============================================================ #
         self._datefrm = tki.Frame(self._dtfrm, bg=rgb2hex(BGCOLORAPL),
-                                  bd=0, relief=tki.GROOVE)
+                                  bd=1, relief=tki.GROOVE)
         self._datefrm.pack(padx=1, pady=0, side=tki.LEFT, fill=tki.X,
                            expand=tki.YES)
 
@@ -234,6 +273,85 @@ class UCD_confronto:
         self._fdate.trace("w", lambda vn, en, md, dn=self._fdatent:
                           dn.config(fg=rgb2hex(TXCOLORSTD)))
 
+        # Subframe de porcentagens #
+        # ============================================================ #
+        self._perfrm = tki.Frame(self._dtfrm, bg=rgb2hex((0.750, 0.750, 0.750)),
+                                 bd=1, relief=tki.GROOVE)
+        self._perfrm.pack(padx=1, pady=0, side=tki.LEFT, fill=tki.X,
+                          expand=tki.YES)
+
+        # Variável mutante de percentagem inicial falhas
+        self._iperfail = tki.StringVar()
+        self._iperfail.set(5)
+        # Variável mutante de percentagem inicial reprovações
+        self._iperrep = tki.StringVar()
+        self._iperrep.set(5)
+
+        # Rótulo % falhas.
+        tki.Label(self._perfrm, bd=0, bg=rgb2hex(BGCOLORAPL), fg='white',
+                  text=u"% Falhas", font=('Verdana', '8', 'bold'),
+                  relief=tki.FLAT,
+                  justify=tki.CENTER).grid(column=2, row=0, padx=2,
+                                           pady=0, sticky=tki.EW)
+
+        # Rótulo % reprovações.
+        tki.Label(self._perfrm, bd=0, bg=rgb2hex(BGCOLORAPL), fg='white',
+                  text=u"% Reprovações", font=('Verdana', '8', 'bold'),
+                  relief=tki.FLAT,
+                  justify=tki.CENTER).grid(column=3, row=0, padx=2,
+                                           pady=0, sticky=tki.EW)
+
+        # Rótulo "Limites".
+        self._perfrm_rot = tki.Label(self._perfrm, bg=rgb2hex(BGCOLORAPL),
+                                     bd=0, fg='white', text=u"Limites: ",
+                                     font=('Verdana', '9', 'bold'),
+                                     relief=tki.FLAT, justify=tki.RIGHT)
+        self._perfrm_rot.grid(column=0, row=1, rowspan=2, padx=4,
+                              pady=0, sticky=tki.NSEW)
+
+        # Campo de entrada de percentagem inicial de falhas
+        self._iperfailent = tki.Entry(self._perfrm, bd=3, width=10,
+                                      textvariable=self._iperfail,
+                                      justify=tki.CENTER)
+        self._iperfailent.grid(column=2, row=1, rowspan=2, padx=0, pady=2,
+                               ipady=2, sticky=tki.EW)
+        # Campo de entrada de percentagem de reprovações
+        self._iperrepent = tki.Entry(self._perfrm, bd=3, width=10,
+                                     textvariable=self._iperrep,
+                                     justify=tki.CENTER)
+        self._iperrepent.grid(column=3, row=1, rowspan=2, padx=0, pady=2,
+                              ipady=2, sticky=tki.E)
+
+        #  previamente desabilitada
+        self.disable(self._perfrm.winfo_children())
+
+        # Subframe de diferenças #
+        # ============================================================ #
+        self._delfrm = tki.Frame(self._dtfrm, bg=rgb2hex((0.750, 0.750, 0.750)),
+                                 bd=1, relief=tki.GROOVE)
+        self._delfrm.pack(padx=1, pady=0, side=tki.LEFT, fill=tki.X,
+                          expand=tki.YES)
+
+        # Variável mutante de delta máximo aceitável
+        self._idelrep = tki.StringVar()
+
+        # Rótulo Delta máx.
+        tki.Label(self._delfrm, bd=0, bg=rgb2hex(BGCOLORAPL), fg='white',
+                  text=u"Delta máx", font=('Verdana', '8', 'bold'),
+                  relief=tki.FLAT,
+                  justify=tki.CENTER).grid(column=2, row=0, padx=2,
+                                           pady=0, sticky=tki.EW)
+
+        # Campo de entrada de delta máximo aceitavel
+        self._idelent = tki.Entry(self._delfrm, bd=3, width=10,
+                                  textvariable=self._idelrep,
+                                  justify=tki.CENTER)
+        self._idelent.grid(column=2, row=1, rowspan=2, padx=0, pady=2,
+                           ipady=2, sticky=tki.E)
+
+        #  previamente desabilitada
+        self.disable(self._delfrm.winfo_children())
+
         # ============================================================ #
         # Frame de Controle
         # ============================================================ #
@@ -292,7 +410,7 @@ class UCD_confronto:
         self._param_ctrl_opt.grid(column=1, row=2, rowspan=1, padx=4, pady=0,
                                   sticky=tki.NSEW)
 
-        # Opções de Sensores Controle
+        # Menu de Opções Sensores Controle
         self._ctrl_Sfrm_sensor = tki.Label(self._ctrl_Sfrm,
                                            bg=rgb2hex(BGCOLORAPL),
                                            bd=0, fg='white', text=u"Sensor:",
@@ -301,30 +419,25 @@ class UCD_confronto:
         self._ctrl_Sfrm_sensor.grid(column=0, row=3, rowspan=1,
                                     padx=10, pady=2, sticky=tki.NSEW)
 
-        # Listagem de Sensores disponíveis para consulta.
-        self._senlbx_ctrl = tki.Listbox(self._ctrl_Sfrm, bd=1,
-                                        activestyle='none',
-                                        selectmode=tki.SINGLE,
-                                        width=16, height=1,
-                                        selectborderwidth=3,
-                                        setgrid=tki.NO,
-                                        exportselection=tki.FALSE,
-                                        selectbackground=rgb2hex(BGCOLORSLT),
-                                        font=('Verdana', '11', 'bold'))
-        self._senlbx_ctrl.grid(column=1, row=3, rowspan=1, padx=4, pady=0,
-                               sticky=tki.NSEW)
+        # Variável mutante do Sensor Controle
+        self._sensor_ctrl_var = tki.StringVar()
 
-        # Menu de UCDs para consulta facilitada.
-        self._ucdsmenua = tki.Menu(self._root, tearoff=0)
+        # Menu de Sensor disponíveis para consulta.
+        self._sensor_ctrl_opt = tki.OptionMenu(self._ctrl_Sfrm,
+                                               self._sensor_ctrl_var,
+                                               ())
+        self._sensor_ctrl_opt.grid(column=1, row=3, rowspan=1, padx=4, pady=0,
+                                   sticky=tki.NSEW)
 
         # Subframe de UCDs Controle
+        # ============================================================ #
         self._ctrl_Sfrm_ucdsmenu = tki.Label(self._ctrl_Sfrm,
                                              bg=rgb2hex(BGCOLORAPL),
                                              bd=0, fg='white', text=u"UCDs:",
                                              font=('Verdana', '9', 'bold'),
                                              relief=tki.FLAT,
                                              justify=tki.CENTER)
-        self._ctrl_Sfrm_ucdsmenu.grid(column=0, columnspan=1, row=4, rowspan=2,
+        self._ctrl_Sfrm_ucdsmenu.grid(column=0, columnspan=1, row=5, rowspan=2,
                                       padx=2, pady=0, sticky=tki.N)
 
         # Listagem de UCDs disponíveis para consulta.
@@ -337,11 +450,11 @@ class UCD_confronto:
                                          exportselection=tki.FALSE,
                                          selectbackground=rgb2hex(BGCOLORSLT),
                                          font=('Verdana', '11', 'bold'))
-        self._ucdslbx_ctrl.grid(column=1, row=4, rowspan=2, padx=0, pady=0,
+        self._ucdslbx_ctrl.grid(column=1, row=5, rowspan=2, padx=0, pady=0,
                                 sticky=tki.NS)
 
         # Menu de UCDs para consulta facilitada.
-        self._ucdsmenub = tki.Menu(self._root, tearoff=0)
+        self._ucdsmenuctrl = tki.Menu(self._root, tearoff=0)
 
         # Opção de declaração de camada vertical do sensor ADCP com
         # visualização condicional à seleção.
@@ -429,7 +542,7 @@ class UCD_confronto:
         self._param_teste_opt.grid(column=1, row=2, rowspan=1, padx=4, pady=0,
                                    sticky=tki.NSEW)
 
-        # Opções de Sensores Teste
+        # Menu de Opções de Sensores Teste
         self._teste_Sfrm_sensor = tki.Label(self._teste_Sfrm, bd=0, fg='white',
                                             bg=rgb2hex(BGCOLORAPL),
                                             text=u"Sensor:", relief=tki.FLAT,
@@ -438,21 +551,15 @@ class UCD_confronto:
         self._teste_Sfrm_sensor.grid(column=0, row=3, rowspan=1,
                                      padx=10, pady=2, sticky=tki.NSEW)
 
-        # Listagem de Sensores disponíveis para consulta.
-        self._senlbx_teste = tki.Listbox(self._teste_Sfrm, bd=1,
-                                         activestyle='none',
-                                         selectmode=tki.SINGLE,
-                                         width=16, height=1,
-                                         selectborderwidth=3,
-                                         setgrid=tki.NO,
-                                         exportselection=tki.FALSE,
-                                         selectbackground=rgb2hex(BGCOLORSLT),
-                                         font=('Verdana', '11', 'bold'))
-        self._senlbx_teste.grid(column=1, row=3, rowspan=1, padx=4, pady=0,
-                                sticky=tki.NSEW)
+        # Variável mutante do Sensor Teste
+        self._sensor_teste_var = tki.StringVar()
 
-        # Menu de UCDs para consulta facilitada.
-        self._ucdsmenuc = tki.Menu(self._root, tearoff=0)
+        # Menu de Sensor disponíveis para consulta.
+        self._sensor_teste_opt = tki.OptionMenu(self._teste_Sfrm,
+                                                self._sensor_teste_var,
+                                                ())
+        self._sensor_teste_opt.grid(column=1, row=3, rowspan=1, padx=4, pady=0,
+                                    sticky=tki.NSEW)
 
         # Subframe de UCDs Teste
         # ============================================================ #
@@ -479,7 +586,7 @@ class UCD_confronto:
                                  padx=0, pady=0, sticky=tki.NS)
 
         # Menu de UCDs para consulta facilitada.
-        self._ucdsmenud = tki.Menu(self._root, tearoff=0)
+        self._ucdsmenuteste = tki.Menu(self._root, tearoff=0)
 
         # Opção de declaração de camada vertical do sensor ADCP com
         # visualização condicional à seleção.
@@ -572,6 +679,57 @@ class UCD_confronto:
         # Carregamento de agrupamentos de UCDs definidos pela aplicação.
         self._uselvar = tki.StringVar()
 
+    def enable(self, childList):
+        userid = self._usergroup.get()
+        for child in childList:
+            child.configure(state='normal', bg=rgb2hex(
+                self._userprof[userid][u"BGCOLORAPL"]))
+
+    def disable(self, childList):
+        userid = self._usergroup.get()
+        for child in childList:
+            child.configure(state='disable', bg=rgb2hex(
+                self._userprof[userid][u"BGCOLORAPL"]))
+
+    def setuplimits(self):
+        if self._usergroup.get() == 2:
+            if self._lim.get():
+                self._iperfailent.configure(
+                    state='normal', bg=rgb2hex((1.000, 1.000, 1.000)))
+                self._iperrepent.configure(
+                    state='normal', bg=rgb2hex((1.000, 1.000, 1.000)))
+                self._idelent.configure(
+                    state='normal', bg=rgb2hex((1.000, 1.000, 1.000)))
+            else:
+                self._iperfailent.configure(state='disable')
+                self._iperrepent.configure(state='disable')
+                self._idelent.configure(state='disable')
+        else:
+            self._lim.set(False)
+
+    def setuserprof(self):
+        """ Selecionar perfil de usuário. """
+        userid = self._usergroup.get()
+        if userid == 2:
+            self.enable(self._perfrm.winfo_children())
+            self._perfrm.configure(bg=rgb2hex(
+                self._userprof[userid][u"BGCOLORAPL"]))
+            self.enable(self._delfrm.winfo_children())
+            self._delfrm.configure(bg=rgb2hex(
+                self._userprof[userid][u"BGCOLORAPL"]))
+            self._iperfailent.configure(state='disable')
+            self._iperrepent.configure(state='disable')
+            self._idelent.configure(state='disable')
+            self._lim.set(False)
+        else:
+            self._perfrm.configure(
+                bg=rgb2hex(self._userprof[userid][u"BGCOLORAPL"]))
+            self._delfrm.configure(bg=rgb2hex(
+                self._userprof[userid][u"BGCOLORAPL"]))
+            self.disable(self._perfrm.winfo_children())
+            self.disable(self._delfrm.winfo_children())
+            self._lim.set(False)
+
     def moddatevar(self, date, dtdays):
         u""" Aumentar/diminuir data do período de consulta. """
         try:
@@ -619,7 +777,7 @@ class UCD_confronto:
         # Oferta e atualização do menu de UCDs.
         self._ucdsmenuvars = list()
 
-        self.menuaval(self._ucdsmenub, self._ctrl_Sfrm_ucdsmenu,
+        self.menuaval(self._ucdsmenuctrl, self._ctrl_Sfrm_ucdsmenu,
                       self._ucdslbx_ctrl, self._ucdsmenuvars)
 
         self._ctrl_Sfrm_ucdsmenu["cursor"] = "sizing"
@@ -660,7 +818,7 @@ class UCD_confronto:
         # Oferta e atualização do menu de UCDs.
         self._ucdsmenuvars = list()
 
-        self.menuaval(self._ucdsmenud, self._teste_Sfrm_ucdsmenu,
+        self.menuaval(self._ucdsmenuteste, self._teste_Sfrm_ucdsmenu,
                       self._ucdslbx_teste, self._ucdsmenuvars)
 
         self._teste_Sfrm_ucdsmenu["cursor"] = "sizing"
@@ -669,20 +827,17 @@ class UCD_confronto:
     def askparam_ctrl(self, dbvalue):
         u""" Listar Parâmetros Controle disponíveis para consulta. """
         # Limpeza do menu de sensores Controle
-        self._senlbx_ctrl.delete(0, tki.END)
+        menu = self._sensor_ctrl_opt["menu"]
+        menu.delete(0, "end")
+        self._sensor_ctrl_var.set(' ')
         # Oferta da lista de sensores disponíveis.
         self._eqps_ctrl = self._modapp[dbvalue][u"sensores"]
         # Oferta da lista de Sensores disponíveis.
         for lstid, lstnm in self._eqps_ctrl:
-            self._senlbx_ctrl.insert(tki.END, lstnm)
-
-        # Oferta e atualização do menu de UCDs.
-        self._sensorsmenuvars = list()
-        self.menuaval(self._ucdsmenua, self._ctrl_Sfrm_sensor,
-                      self._senlbx_ctrl, self._sensorsmenuvars)
-
-        self._ctrl_Sfrm_sensor["cursor"] = "sizing"
-        self._ctrl_Sfrm_sensor["text"] = u"Sensor:\n\u2630"
+            menu.add_command(label=lstnm,
+                             command=lambda value=lstnm: self._sensor_ctrl_var.set(value))
+        # limite do parâmetro.
+        self._idelrep.set(self._modapp[dbvalue][u"limite"])
 
         # Ocultação da seleção de camada do ADCP.
         if self._param_ctrl_var.get()[-9::] != u"Correntes":
@@ -691,22 +846,17 @@ class UCD_confronto:
             self.asklayers_ctrl(True)
 
     def askparam_teste(self, dbvalue):
-        u""" Listar Parâmetros Teste disponíveis para consulta. """
-        # Limpeza do menu de sensores Teste
-        self._senlbx_teste.delete(0, tki.END)
+        u""" Listar Parâmetros Controle disponíveis para consulta. """
+        # Limpeza do menu de sensores Controle
+        menu = self._sensor_teste_opt["menu"]
+        menu.delete(0, "end")
+        self._sensor_teste_var.set(' ')
         # Oferta da lista de sensores disponíveis.
         self._eqps_teste = self._modapp[dbvalue][u"sensores"]
         # Oferta da lista de Sensores disponíveis.
         for lstid, lstnm in self._eqps_teste:
-            self._senlbx_teste.insert(tki.END, lstnm)
-
-        # Oferta e atualização do menu de UCDs.
-        self._sensorsmenuvars = list()
-        self.menuaval(self._ucdsmenuc, self._teste_Sfrm_sensor,
-                      self._senlbx_teste, self._sensorsmenuvars)
-
-        self._teste_Sfrm_sensor["cursor"] = "sizing"
-        self._teste_Sfrm_sensor["text"] = u"Sensor:\n\u2630"
+            menu.add_command(label=lstnm,
+                             command=lambda value=lstnm: self._sensor_teste_var.set(value))
 
         # Ocultação da seleção de camada do ADCP.
         if self._param_teste_var.get()[-9::] != u"Correntes":
@@ -778,8 +928,8 @@ class UCD_confronto:
             self.dbqry = self._dbs[self._db_ctrl_var.get()]
             self.ucdqry = self._ucds_ctrl[
                 self._ucdslbx_ctrl.curselection()[0]][0]
-            self.eqpqry = self._eqps_ctrl[
-                self._senlbx_ctrl.curselection()[0]][0]
+            self.eqpqry = [lstid for lstid, lstnm in self._eqps_ctrl if lstnm == self._sensor_ctrl_var.get()][
+                0]
             self.lyrqry = self._layer_ctrl.get()
             Data_control = self.GET_data(self.ucdqry,
                                          par=self._param_ctrl_var.get())
@@ -791,18 +941,17 @@ class UCD_confronto:
             self.dbqry = self._dbs[self._db_teste_var.get()]
             self.ucdqry = self._ucds_teste[
                 self._ucdslbx_teste.curselection()[0]][0]
-            self.eqpqry = self._eqps_teste[
-                self._senlbx_teste.curselection()[0]][0]
+            self.eqpqry = [lstid for lstid, lstnm in self._eqps_teste if lstnm == self._sensor_teste_var.get()][
+                0]
             self.lyrqry = self._layer_teste.get()
             Data_teste = self.GET_data(self.ucdqry,
                                        par=self._param_teste_var.get())
             self._msg_teste = 'NOK' if Data_teste == 'error' else 'OK'
         except:
             self._msg_teste = 'NOK'
-
         self.ax.set_title(' ')
         if self._msg_ctrl == 'OK' and self._msg_teste == 'OK':
-            self.ax.plot(Data_control['t'], Data_control['data0'], '.-k')
+            self.ax.plot(Data_control['t'], Data_control['data0'], '.-g')
             lgnd.append(Data_control['tag'] +
                         ' @ %s' % self._db_ctrl_var.get())
             self.ax.set_ylabel(Data_control['data0quant'] + u" (" +
@@ -811,9 +960,17 @@ class UCD_confronto:
                                                 index=Data_control['t']),
                                  'TESTE': Series(Data_teste['data0'],
                                                  index=Data_teste['t'])})
+            if self._param_ctrl_var.get()[:9] == "Int. anem":
+                idx = Data_control['data0'] <= 3
+                if sum(idx)>0:
+                    self.ax.plot(Data_control['t'][idx],
+                                 Data_control['data0'][idx], 'og')
+                    lgnd.append('Vento abaixo de 3m/s')
             if Data_control['data0quant'] == Data_teste['data0quant']:
                 self.df['diff'] = abs(self.df.CTRL - self.df.TESTE)
-                self.ax.plot(Data_teste['t'], Data_teste['data0'], '.-r')
+                if self._param_ctrl_var.get()[:9] == "Dir. anem":
+                    self.df['diff'][self.df['diff']>180]=360-self.df['diff'][self.df['diff']>180]
+                self.ax.plot(Data_teste['t'], Data_teste['data0'], '.-y')
                 self.ax.set_title(u'Diferença média absoluta '
                                   '(%1.2f' u'\u00B1' '%1.2f)'
                                   % (self.df['diff'].mean(),
@@ -821,60 +978,114 @@ class UCD_confronto:
                                   Data_control['data0unit'])
                 lgnd.append(Data_teste['tag'] +
                             ' @ %s' % self._db_teste_var.get())
+                if self._param_teste_var.get()[:9] == "Int. anem":
+                    idx = Data_teste['data0'] <= 3
+                    if sum(idx)>0:
+                        self.ax.plot(Data_teste['t'][idx],
+                                     Data_teste['data0'][idx], 'oy')
+                        lgnd.append('Vento abaixo de 3m/s')
+                if self._usergroup.get() == 2:
+                    rep, idx = self.count_rep(self._idelrep.get(), lgnd)
+                    falhas = self.count_fail(Data_teste)
+                    ttl = u'[%1.1f%%] Falhas na série de Teste\n[%1.1f%%] Reprovações acima do Limite de ' % (
+                        falhas, rep) + self._idelrep.get() + Data_control['data0unit']
+                    self.ax.plot(self.df.index[idx.values], self.df[
+                                 'TESTE'][idx], 'Dk')
+                    if (falhas >= float(self._iperfail.get())) or (rep >= float(self._iperrep.get())):
+                        self.ax.set_title(ttl, color='r')
+                    else:
+                        self.ax.set_title(ttl)
+                self.ax.legend(lgnd, framealpha=0.6, loc=0)
                 self.setaxdate(fig.axes[0], self.df.index.min(),
                                self.df.index.max())
-                self.ax.legend((self.ax.axes.get_lines()[0],
-                                self.ax.axes.get_lines()[1]), lgnd,
-                               framealpha=0.6, loc=0)
             else:
                 self.ax0 = self.ax.twinx()
-                self.ax0.tick_params(axis='y', colors='red')
+                self.ax0.tick_params(axis='y', colors='y')
                 self.ax0.set_ylabel(Data_teste['data0quant'] + u" (" +
-                    Data_teste['data0unit'] + u")", fontsize=12,
-                    color='red')
-                self.ax0.plot(Data_teste['t'], Data_teste['data0'], '.-r')
+                                    Data_teste['data0unit'] + u")", fontsize=12,
+                                    color='y')
+                self.ax0.plot(Data_teste['t'], Data_teste['data0'], '.-y')
                 lgnd.append(Data_teste['tag'] +
                             ' @ %s' % self._db_teste_var.get())
-                self.ax0.legend((self.ax.axes.get_lines()[0],
-                                 self.ax0.axes.get_lines()[0]), lgnd,
-                                framealpha=0.6, loc=0)
                 if self._param_teste_var.get()[:3] == "Dir":
                     self.ax0.set_ylim((0., 360.))
+                if self._param_teste_var.get()[:3] == "Bar":
+                    (self.ax0.get_yaxis().set_major_formatter(
+                     FuncFormatter(lambda x, p: '%1.2f' % x)))
+                if self._param_teste_var.get()[:9] == "Int. anem":
+                    idx = Data_teste['data0'] <= 3
+                    if sum(idx)>0:
+                        self.ax0.plot(Data_teste['t'][idx], Data_teste[
+                                      'data0'][idx], 'oy')
+                        lgnd.append('Vento abaixo de 3m/s')
+                if self._usergroup.get() == 2:
+                    falhas = self.count_fail(Data_teste)
+                    if falhas >= float(self._iperfail.get()):
+                        self.ax.set_title(
+                            u'[%1.1f%%] Falhas na série de Teste' % (falhas), color='r')
+                    else:
+                        self.ax.set_title(
+                            u'[%1.1f%%] Falhas na série de Teste' % (falhas))
+                self.ax0.legend(lgnd, framealpha=0.6, loc=0)
+
+            self.ax.set_xlabel('Consulta em: %s UTC' %datetime.utcnow().strftime(u"%d/%m/%Y %H:%M:%S"))
             if self._param_ctrl_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
             if self._param_ctrl_var.get()[:3] == "Bar":
                 (self.ax.get_yaxis().set_major_formatter(
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
-            if self._param_teste_var.get()[:3] == "Bar":
-                (self.ax0.get_yaxis().set_major_formatter(
-                 FuncFormatter(lambda x, p: '%1.2f' % x)))
+
+            self.ax.legend(lgnd, framealpha=0.6, loc=0)
             self.setaxdate(fig.axes[0], self.df.index.min(),
                            self.df.index.max())
         elif self._msg_ctrl == 'OK' and self._msg_teste == 'NOK':
-            self.ax.plot(Data_control['t'], Data_control['data0'], '.-k')
+            self.ax.plot(Data_control['t'], Data_control['data0'], '.-g')
             lgnd.append(Data_control['tag'] +
                         ' @ %s' % self._db_ctrl_var.get())
             self.ax.set_ylabel(Data_control['data0quant'] + u" (" +
                                Data_control['data0unit'] + u")", fontsize=12)
-            self.ax.legend(lgnd, framealpha=0.6, loc=0)
             if self._param_ctrl_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
             if self._param_ctrl_var.get()[:3] == "Bar":
                 (self.ax.get_yaxis().set_major_formatter(
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
+            if self._param_ctrl_var.get()[:9] == "Int. anem":
+                idx = Data_control['data0'] <= 3
+                if sum(idx)>0:
+                    self.ax.plot(Data_control['t'][idx],
+                                 Data_control['data0'][idx], 'og')
+                    lgnd.append('Vento abaixo de 3m/s')
+            self.ax.set_xlabel('Consulta em: %s UTC' %datetime.utcnow().strftime(u"%d/%m/%Y %H:%M:%S"))
+            self.ax.legend(lgnd, framealpha=0.6, loc=0)
             self.setaxdate(fig.axes[0], Data_control['t'].min(),
                            Data_control['t'].max())
         elif self._msg_ctrl == 'NOK' and self._msg_teste == 'OK':
-            self.ax.plot(Data_teste['t'], Data_teste['data0'], '.-r')
-            lgnd.append(Data_teste['tag'] + ' @ %s' % self._db_ctrl_var.get())
+            self.ax.plot(Data_teste['t'], Data_teste['data0'], '.-y')
+            lgnd.append(Data_teste['tag'] + ' @ %s' % self._db_teste_var.get())
             self.ax.set_ylabel(Data_teste['data0quant'] + u" (" +
                                Data_teste['data0unit'] + u")", fontsize=12)
-            self.ax.legend(lgnd, framealpha=0.6, loc=0)
             if self._param_teste_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
             if self._param_teste_var.get()[:3] == "Bar":
                 (self.ax.get_yaxis().set_major_formatter(
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
+            if self._param_teste_var.get()[:9] == "Int. anem":
+                idx = Data_teste['data0'] <= 3
+                if sum(idx)>0:
+                    self.ax.plot(Data_teste['t'][idx],
+                                 Data_teste['data0'][idx], 'oy')
+                    lgnd.append('Vento abaixo de 3m/s')
+            if self._usergroup.get() == 2:
+                falhas = self.count_fail(Data_teste)
+                lgnd.append('Reprovações')
+                if falhas >= float(self._iperfail.get()):
+                    self.ax.set_title(
+                        u'[%1.1f%%] Falhas na série de Teste' % (falhas), color='r')
+                else:
+                    self.ax.set_title(
+                        u'[%1.1f%%] Falhas na série de Teste' % (falhas))
+            self.ax.set_xlabel('Consulta em: %s UTC' %datetime.utcnow().strftime(u"%d/%m/%Y %H:%M:%S"))                    
+            self.ax.legend(lgnd, framealpha=0.6, loc=0)
             self.setaxdate(fig.axes[0], Data_teste['t'].min(),
                            Data_teste['t'].max())
         elif self._msg_ctrl == 'NOK' and self._msg_teste == 'NOK':
@@ -947,6 +1158,27 @@ class UCD_confronto:
         menubt.bind("<Button-1>", lambda ev, pp=self.popupmenu, mn=menu,
                     mnb=menubt, lb=lbxmain, lv=lstvars:
                         pp(ev, mn, mnb, lb, lv))
+
+    def count_fail(self, data):
+        dtmn = datetime.strptime(self._idate.get(), "%d/%m/%Y %H:%M:%S")
+        dtmx = datetime.strptime(self._fdate.get(), "%d/%m/%Y %H:%M:%S")
+        R_expect = (int((dtmx - dtmn).total_seconds() //
+                        3600) + 1)
+        R_received = float(len(data['data0']))
+        N_nan = (R_received -
+                 np.count_nonzero(np.isnan(data['data0'])))
+        falhas = 100 * (1 - (N_nan / R_expect))
+        return falhas
+
+    def count_rep(self, ref, lgnd):
+        idx = self.df['diff'] >= float(ref)
+        R_received = float(len(self.df['TESTE']))
+        N_nan = (R_received -
+                 np.count_nonzero(np.isnan(self.df['TESTE'])))
+        rep = 100 * (sum(idx)  / N_nan)
+        if rep > 0:
+            lgnd.append(u'Reprovações')
+        return rep, idx
 
     # Funções de buscas
     # ============================================================ #
@@ -1107,7 +1339,7 @@ class UCD_confronto:
                     Data = pyocnp.OcnpRootData()
                     Data.put(u't', qryarray[:, 0])
                     Data.put(u'tag', tag)
-                    Data.put(u'data0', qryarray[:, 1])
+                    Data.put(u'data0', qryarray[:, 1].astype('Float64'))
                     Data.put(u'data0quant', quant)
                     Data.put(u'data0unit', u'm/s')
             elif par == u"Dir. anem #2":
@@ -1149,7 +1381,7 @@ class UCD_confronto:
                 else:
                     Data = pyocnp.OcnpRootData()
                     for i, j in enumerate(qryarray[:, -1]):
-                        if (qryarray[i, 1] !=None) & (qryarray[i, 3] !=None):
+                        if (qryarray[i, 1] != None) & (qryarray[i, 3] != None):
                             qryarray[i, 1] = (qryarray[i, 1] +
                                               qryarray[i, 2] +
                                               qryarray[i, 3]) % \
@@ -1161,10 +1393,10 @@ class UCD_confronto:
                                               qryarray[i, 2]) % \
                                 360 if j == 'S' else (qryarray[i, 1] +
                                                       qryarray[i, 2]) % \
-                                360                          
+                                360
                     Data.put(u't', qryarray[:, 0])
                     Data.put(u'tag', tag)
-                    Data.put(u'data0', qryarray[:, 1])
+                    Data.put(u'data0', qryarray[:, 1].astype('Float64'))
                     Data.put(u'data0quant', quant)
                     Data.put(u'data0unit', u"\u00b0")
             elif par == u"Baro #1":
@@ -1309,7 +1541,6 @@ class UCD_confronto:
 
     # Customização da figura
     # ============================================================ #
-
     def setaxdate(self, axes, datemn, datemx):
         u""" Customizar rótulos de eixo temporal. """
         # Limites inferior e superior do eixo.
@@ -1372,7 +1603,7 @@ def main():
     u"""Função para rodar interface usuário."""
     root = tki.Tk()
     root.title(u"Confrontos de Dados UCDs" +
-               u" - OCEANOP")
+               u" - OCEANOP - versão 2.0")
     root.resizable(width=False, height=False)
     UCD_confronto(root)
     root.mainloop()
