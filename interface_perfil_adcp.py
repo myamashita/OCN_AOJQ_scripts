@@ -3,18 +3,20 @@
 # purpose:  ADCP profile
 # author:   Márcio Yamashita
 # created:  24-march-2016
-# modified: 12-april-2017 AOJQ
+# modified: 12-april-2018 AOJQ
 
 
 from __future__ import division
 
 import Tkinter as tki
+import tkMessageBox
 import datetime as dtm
 from collections import OrderedDict
 
 import pyocnp
 import numpy as np
 import pandas as pd
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb2hex
 from matplotlib.dates import DateFormatter
@@ -89,6 +91,30 @@ class ADCP_Profile:
 
         menu.add_cascade(label=u"Direc.", menu=menu.user_cmap_direc)
         self._user_dir.set(1)
+
+        menu.user_cmap_EI = tki.Menu(menu, tearoff=0)
+        self._user_EI = tki.IntVar()
+        menu.user_cmap_EI.add_radiobutton(label=ur'jet',
+                                          value=0, variable=self._user_EI)
+        menu.user_cmap_EI.add_radiobutton(label=ur'hvs',
+                                          value=1, variable=self._user_EI)
+        menu.user_cmap_EI.add_radiobutton(label=ur'ocean',
+                                          value=2, variable=self._user_EI)
+
+        menu.add_cascade(label=u"Echo I.", menu=menu.user_cmap_EI)
+        self._user_EI.set(0)
+
+        menu.user_cmap_CM = tki.Menu(menu, tearoff=0)
+        self._user_CM = tki.IntVar()
+        menu.user_cmap_CM.add_radiobutton(label=ur'jet',
+                                          value=0, variable=self._user_CM)
+        menu.user_cmap_CM.add_radiobutton(label=ur'hvs',
+                                          value=1, variable=self._user_CM)
+        menu.user_cmap_CM.add_radiobutton(label=ur'ocean',
+                                          value=2, variable=self._user_CM)
+
+        menu.add_cascade(label=u"Cor M.", menu=menu.user_cmap_CM)
+        self._user_CM.set(0)
 
         self._menubar.add_cascade(label=u"Colormap", menu=menu)
 
@@ -170,10 +196,10 @@ class ADCP_Profile:
         self._dbopt.grid(column=8, row=1, rowspan=1, padx=4, pady=0,
                          sticky=tki.NSEW)
 
-        # Frame de UCDs PROD
+        # Frame de UCDs
         # ============================================================ #
         self._ucdfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORAPL),
-                                 bd=0, relief=tki.FLAT)
+                                 bd=2, relief=tki.GROOVE)
         self._ucdfrm.pack(fill=tki.BOTH, padx=6, pady=4, side=tki.LEFT)
 
         self._ucdsmenub = tki.Label(self._ucdfrm, bg=rgb2hex(BGCOLORAPL),
@@ -207,6 +233,59 @@ class ADCP_Profile:
         # Menu de UCDs para consulta facilitada.
         self._ucdsmenu = tki.Menu(self._root, tearoff=0)
 
+        # Subframe de Setup #
+        # ============================================================ #
+        self._stpfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORAPL),
+                                 bd=2, relief=tki.GROOVE)
+        self._stpfrm.pack(expand=tki.YES, padx=1, pady=1, side=tki.LEFT)
+
+        # Variável mutante do setup selecionado.
+        self._stpvar = tki.StringVar()
+
+        self._stplabel = tki.Label(self._stpfrm, bg=rgb2hex(BGCOLORAPL),
+                                   bd=0, fg='white', text=u"Setups:",
+                                   font=('Verdana', '9', 'bold'),
+                                   relief=tki.FLAT, justify=tki.CENTER)
+        self._stplabel.grid(column=1, columnspan=1, row=0, rowspan=1,
+                            padx=1, pady=1, sticky=tki.N)
+
+        self._stpkeys = tki.Label(self._stpfrm, bg=rgb2hex(BGCOLORAPL),
+                                  relief=tki.FLAT)
+        self._stpkeys.grid(column=1, columnspan=1, row=3, rowspan=2,
+                           padx=1, pady=1, sticky=tki.N)
+        MODES = [("Int./Dir.", "1"), ("Echo Int.", "2"), ("Correlation", "3")]
+
+        for text, mode in MODES:
+            b = tki.Radiobutton(self._stpkeys, text=text, fg='white',
+                                bg=rgb2hex(BGCOLORAPL), 
+                                selectcolor=rgb2hex(BGCOLORAPL),
+                                variable=self._stpvar, value=mode)
+            b.pack(anchor=tki.W)
+
+        self._stpvar.set("1")
+
+        # Subframe de Mensagem #
+        # ============================================================ #
+        self._msgfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORAPL),
+                                 bd=0, relief=tki.FLAT)
+        self._msgfrm.pack(expand=tki.YES, padx=0, pady=0, side=tki.LEFT)
+        self._qrymsg = tki.Label(self._msgfrm, bg=rgb2hex(BGCOLORAPL),
+                                 bd=0, fg='white', text=u"Mensagem:",
+                                 font=('Verdana', '9', 'bold'),
+                                 relief=tki.FLAT, justify=tki.CENTER)
+
+        self._qrymsg.grid(column=2, columnspan=1, row=1, rowspan=1,
+                          padx=1, pady=1, sticky=tki.N)
+
+        self._msg = tki.StringVar()
+        self._msg.set("Escolha o Banco")
+        self._qrymsgbox = tki.Label(self._msgfrm, bg=rgb2hex(BGCOLORAPL), bd=1,
+                                    width=25, font=('Verdana', '9', 'bold'),
+                                    fg='yellow', textvariable=self._msg,
+                                    justify=tki.CENTER)
+        self._qrymsgbox.grid(column=2, columnspan=1, row=2, rowspan=1,
+                             padx=1, pady=1, sticky=tki.N)
+
         # Subframe de Consulta #
         # ============================================================ #
         self._qryfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORBOX),
@@ -218,31 +297,10 @@ class ADCP_Profile:
         self._qrybt = tki.Button(self._qryfrm, bd=1, text=u"Consulta",
                                  font=('Default', '10', 'bold'),
                                  command=self.askdata)
-        self._qrybt.grid(column=1, row=1, rowspan=1, padx=0, pady=1,
+        self._qrybt.grid(column=3, row=1, rowspan=1, padx=0, pady=1,
                          ipadx=1, ipady=1)
         self._qrybt["state"] = tki.DISABLED
 
-        # Subframe de Mensagem #
-        # ============================================================ #
-        self._msgfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORAPL),
-                                 bd=0, relief=tki.FLAT)
-        self._msgfrm.pack(expand=tki.YES, padx=0, pady=0, side=tki.BOTTOM)
-        self._qrymsg = tki.Label(self._msgfrm, bg=rgb2hex(BGCOLORAPL),
-                                 bd=0, fg='white', text=u"Mensagem:",
-                                 font=('Verdana', '9', 'bold'),
-                                 relief=tki.FLAT, justify=tki.CENTER)
-
-        self._qrymsg.grid(column=1, columnspan=1, row=1, rowspan=1,
-                          padx=1, pady=1, sticky=tki.N)
-
-        self._msg = tki.StringVar()
-        self._msg.set("Escolha o Banco")
-        self._qrymsgbox = tki.Label(self._msgfrm, bg=rgb2hex(BGCOLORAPL), bd=1,
-                                    width=25, font=('Verdana', '9', 'bold'),
-                                    fg='yellow', textvariable=self._msg,
-                                    justify=tki.CENTER)
-        self._qrymsgbox.grid(column=1, columnspan=1, row=2, rowspan=1,
-                             padx=1, pady=1, sticky=tki.N)
         self._root.update()
 
         self._mainfrm.pack(fill=tki.BOTH, padx=0, pady=0, side=tki.TOP)
@@ -398,152 +456,390 @@ class ADCP_Profile:
 
         # UCD selecionada para consulta.
         ucdsqry = self._ucds[self._ucdslbx.curselection()[0]][0]
+        # UCD name selecionada para consulta.
+        ucdname = self._ucds[self._ucdslbx.curselection()[0]][1]
 
         # Sensor adcp para consulta.
         eqpsqry = 2
 
+        # Pesquisando
+        self._msg.set("Pesquisando Banco de Dados.")
+        self._root.update()
+
+        if self._stpvar.get() == '1':
+            try:
+                data = pyocnp.adcp_ocndbqry(ucdsqry,
+                                            [0, 50], [self._idate.get(),
+                                                      self._fdate.get()],
+                                            ['HCSP', 'HCDT'], eqpsqry,
+                                            self._dbs[self._dbvar.get()],
+                                            self._DBVIEW)
+                param = pyocnp.adcp_mt_ocndbqry(ucdsqry, [self._idate.get(),
+                                                          self._fdate.get()],
+                                                ['COTA', 'DST_TRS_CM',
+                                                 'DST_CAMADA'], eqpsqry,
+                                                self._dbs[self._dbvar.get()],
+                                                self._DBVIEW)
+                self._msg.set("Pesquisa com resultados.")
+                # call plot
+                self.plot_figure_SP_DT(data, param)
+                # Reativação do botão de consulta aos dados.
+                self._qrybt["state"] = tki.NORMAL
+            except RuntimeError:
+                self._msg.set(u"Base de dados vazia para:\n%s" % ucdname)
+                self._ucdslbx.selection_clear(0, tki.END)
+        elif self._stpvar.get() == '2':
+            try:
+                data = pyocnp.adcp_st_ocndbqry(ucdsqry,
+                                               [0, 50], [self._idate.get(),
+                                                         self._fdate.get()],
+                                               ['EI_1', 'EI_2', 'EI_3', 'EI_4'],
+                                               eqpsqry,
+                                               self._dbs[self._dbvar.get()],
+                                               self._DBVIEW)
+                param = pyocnp.adcp_mt_ocndbqry(ucdsqry, [self._idate.get(),
+                                                          self._fdate.get()],
+                                                ['COTA', 'DST_TRS_CM',
+                                                 'DST_CAMADA'], eqpsqry,
+                                                self._dbs[self._dbvar.get()],
+                                                self._DBVIEW)
+                self._msg.set("Pesquisa com resultados.")
+                # call plot
+                self.plot_figure_EI(data, param)
+                # Reativação do botão de consulta aos dados.
+                self._qrybt["state"] = tki.NORMAL
+            except RuntimeError:
+                self._msg.set(u"Base de dados vazia para:\n%s" % ucdname)
+                self._ucdslbx.selection_clear(0, tki.END)
+        elif self._stpvar.get() == '3':
+            try:
+                data = pyocnp.adcp_st_ocndbqry(ucdsqry,
+                                               [0, 50], [self._idate.get(),
+                                                         self._fdate.get()],
+                                               ['CM_1', 'CM_2', 'CM_3', 'CM_4'],
+                                               eqpsqry,
+                                               self._dbs[self._dbvar.get()],
+                                               self._DBVIEW)
+                param = pyocnp.adcp_mt_ocndbqry(ucdsqry, [self._idate.get(),
+                                                          self._fdate.get()],
+                                                ['COTA', 'DST_TRS_CM',
+                                                 'DST_CAMADA'], eqpsqry,
+                                                self._dbs[self._dbvar.get()],
+                                                self._DBVIEW)
+                self._msg.set("Pesquisa com resultados.")
+                # call plot
+                self.plot_figure_CM(data, param)
+                # Reativação do botão de consulta aos dados.
+                self._qrybt["state"] = tki.NORMAL
+            except RuntimeError:
+                self._msg.set(u"Base de dados vazia para:\n%s" % ucdname)
+                self._ucdslbx.selection_clear(0, tki.END)
+
+    def plot_figure_SP_DT(self, data, param):
         # colormap para plot
         c_map = [plt.cm.jet, plt.cm.hsv, plt.cm.ocean]
         c_0 = c_map[self._user_int.get()]
         c_1 = c_map[self._user_dir.get()]
+        equaltidx = list()
+        for date in data['t']:
+            equaltidx.append((param['t'] == date).nonzero()[0][0])
+        z = param['data0'][equaltidx] + param['data1'][equaltidx] / 100. + \
+            param['data2'][equaltidx] / 2. + \
+            param['data2'][equaltidx] * data['z']
+        cotas = np.unique(param['data0'])
+        plt.close('all')
+        fig = plt.figure(1, facecolor=(1.0, 1.0, 1.0), figsize=(10, 8))
+        fig.show()
+        # Diagramação e exibição da figura.
+        fig.subplots_adjust(bottom=0.1, right=0.985, top=0.95)
+        fig.suptitle(data['tag'].split(u'@')[0] + self._dbvar.get())
+        axSP = fig.add_subplot(211)
+        axDT = fig.add_subplot(212)
 
-        try:
-            data = pyocnp.adcp_ocndbqry(ucdsqry, [0, 50], [self._idate.get(),
-                                                           self._fdate.get()],
-                                        ['HCSP', 'HCDT'], eqpsqry,
-                                        self._dbs[self._dbvar.get()],
-                                        self._DBVIEW)
-            param = pyocnp.adcp_mt_ocndbqry(ucdsqry, [self._idate.get(),
-                                                      self._fdate.get()],
-                                            ['COTA', 'DST_TRS_CM',
-                                             'DST_CAMADA'], eqpsqry,
-                                            self._dbs[self._dbvar.get()],
-                                            self._DBVIEW)
-            self._msg.set("Pesquisa com resultados.")
-            equaltidx = list()
-            for date in data['t']:
-                equaltidx.append((param['t'] == date).nonzero()[0][0])
-            z = param['data0'][equaltidx] + param['data1'][equaltidx] / 100. + \
-                param['data2'][equaltidx] / 2. + \
-                param['data2'][equaltidx] * data['z']
-            cotas = np.unique(param['data0'])
+        axSP.set_ylabel(u"Profundidade [m]")
+        axDT.set_ylabel(u"Profundidade [m]")
 
-            fig = plt.figure(1, facecolor=(1.0, 1.0, 1.0), figsize=(12, 10))
-            axSP = fig.add_subplot(211)
-            axDT = fig.add_subplot(212, sharex=axSP)
-            for i in cotas:
-                idx = param['data0'][equaltidx] == i
-                X_axis_range = pd.date_range(start=data['t'][idx].min(),
-                                             end=data['t'][idx].max(),
-                                             freq='H').to_pydatetime()
-                cols = list(set(X_axis_range) - set(param['t']))
+        axSP.invert_yaxis()
+        axDT.invert_yaxis()
 
-                time = np.append(data['t'][idx], cols)
-                cols = np.full(np.size(cols), np.nan)
-                camada = np.append(data['z'][idx], cols)
-                profundidade = np.append(z[idx], cols)
-                intensidade = np.append(data['data0'][idx], cols)
-                direction = np.append(data['data1'][idx], cols)
+        for i in cotas:
+            idx = param['data0'][equaltidx] == i
+            X_axis_range = pd.date_range(start=data['t'][idx].min(),
+                                         end=data['t'][idx].max(),
+                                         freq='H').to_pydatetime()
+            cols = list(set(X_axis_range) - set(param['t']))
 
-                d = {u'time': time, u'camada': camada,
-                     u'intensidade': intensidade,
-                     u'direção': direction,
-                     u'profundidade': profundidade}
+            time = np.append(data['t'][idx], cols)
+            cols = np.full(np.size(cols), np.nan)
+            camada = np.append(data['z'][idx], cols)
+            profundidade = np.append(z[idx], cols)
+            intensidade = np.append(data['data0'][idx], cols)
+            direction = np.append(data['data1'][idx], cols)
 
-                df = pd.DataFrame(d).pivot(u'profundidade', u'time')
+            d = {u'time': time, u'camada': camada,
+                 u'intensidade': intensidade,
+                 u'direção': direction,
+                 u'profundidade': profundidade}
 
-                cs = axSP.contourf(df['intensidade'].columns, df.index,
-                                   df['intensidade'],
-                                   levels=np.arange(0, data['data0'].max(),
-                                                    0.1), cmap=c_0)
-                cd = axDT.contourf(df['intensidade'].columns,
-                                   df.index, df[u'direção'],
-                                   levels=np.arange(0, 361, 20),
-                                   cmap=c_1)
+            df = pd.DataFrame(d).pivot(u'profundidade', u'time')
+
+            cs = axSP.contourf(df['intensidade'].columns, df.index,
+                               df['intensidade'],
+                               levels=np.arange(0, data['data0'].max(),
+                                                0.1), cmap=c_0)
+            cd = axDT.contourf(df['intensidade'].columns,
+                               df.index, df[u'direção'],
+                               levels=np.arange(0, 361, 20),
+                               cmap=c_1)
             axSP.scatter(data['t'], z, c='k', alpha=0.05, marker='.')
-            cs.ax.invert_yaxis()
-            cd.ax.invert_yaxis()
             axDT.scatter(data['t'], z, c='k', alpha=0.05, marker='.')
-            csc = plt.colorbar(mappable=cs, ax=cs.ax)
-            cdc = plt.colorbar(mappable=cd, ax=cd.ax)
-            csc.set_label('[m/s]')
-            cdc.set_label('Graus')
-            set_figure(axSP, axDT, data['t'][0], data['t'][-1],
-                       df.index, data['z'])
-            cs.ax.set_title(data['tag'].split(u'@')[0] + self._dbvar.get())
-            plt.show()
 
-        except RuntimeError:
-            self._msg.set(u"Empty request to the database.")
+        csc = plt.colorbar(mappable=cs, ax=cs.ax, pad=0.0125)
+        cdc = plt.colorbar(mappable=cd, ax=cd.ax, pad=0.0125)
+        csc.set_label('[m/s]')
+        cdc.set_label('Graus')
+
+        ax0, ax1 = axSP.twinx(), axDT.twinx()
+        ax0.set_ylabel(u"Camada ")
+        ax1.set_ylabel(u"Camada ")
+        ax0.yaxis.tick_left()
+        ax1.yaxis.tick_left()
+        ax0.yaxis.set_label_position('left')
+        ax1.yaxis.set_label_position('left')
+
+        axSP.spines["left"].set_position(('outward', 40))
+        axDT.spines["left"].set_position(('outward', 40))
+
+        ax0.set_ylim(data['z'].min(), data['z'].max())
+        ax1.set_ylim(data['z'].min(), data['z'].max())
+
+        axSP.set_ylim(df.index.max(), df.index.min())
+        axDT.set_ylim(df.index.max(), df.index.min())
+
+        ax0.invert_yaxis()
+        ax1.invert_yaxis()
+        fmt_major_minor(cd.ax)
+        clean_major_minor(cs.ax)
+
+        fig.canvas.draw()
+        self._root.update()
+
+    def plot_figure_EI(self, data, param):
+        # colormap para plot
+        c_map = [plt.cm.jet, plt.cm.hsv, plt.cm.ocean]
+        c_0 = c_map[self._user_EI.get()]
+
+        if plt.fignum_exists(2):
+            plt.close(2)
+            fig = plt.figure(2, facecolor=(1.0, 1.0, 1.0), figsize=(10, 8))
+        else:
+            fig = plt.figure(2, facecolor=(1.0, 1.0, 1.0), figsize=(10, 8))
+        fig.show()
+        # Diagramação e exibição da figura.
+        fig.subplots_adjust(bottom=0.1, right=0.985, top=0.95, hspace=0.1)
+        fig.suptitle(data['tag'].split(u'@')[0] +
+                     self._dbvar.get() + ' ECHO INTENS.')
+
+        axEI1 = fig.add_subplot(411)
+        axEI2 = fig.add_subplot(412, sharex=axEI1)
+        axEI3 = fig.add_subplot(413, sharex=axEI1)
+        axEI4 = fig.add_subplot(414, sharex=axEI1)
+
+        equaltidx = list()
+        for date in data['t']:
+            equaltidx.append((param['t'] == date).nonzero()[0][0])
+        z = param['data0'][equaltidx] + param['data1'][equaltidx] / 100. + \
+            param['data2'][equaltidx] / 2. + \
+            param['data2'][equaltidx] * data['z']
+        cotas = np.unique(param['data0'])
+        for i in cotas:
+            idx = param['data0'][equaltidx] == i
+            X_axis_range = pd.date_range(start=data['t'][idx].min(),
+                                         end=data['t'][idx].max(),
+                                         freq='H').to_pydatetime()
+            cols = list(set() - set(param['t']))
+
+            time = np.append(data['t'][idx], cols)
+            cols = np.full(np.size(cols), np.nan)
+            camada = np.append(data['z'][idx], cols)
+            profundidade = np.append(z[idx], cols)
+            E1 = np.append(data['data0'][idx], cols)
+            E2 = np.append(data['data1'][idx], cols)
+            E3 = np.append(data['data2'][idx], cols)
+            E4 = np.append(data['data3'][idx], cols)
+            d = {u'time': time, u'camada': camada,
+                 u'E1': E1, u'E2': E2,
+                 u'E3': E3, u'E4': E4,
+                 u'profundidade': profundidade}
+
+            df = pd.DataFrame(d).pivot(u'profundidade', u'time')
+            ce1 = axEI1.contourf(df['E1'].columns, df.index, df['E1'],
+                                 levels=np.arange(40, data['data0'].max(),
+                                                  1), cmap=c_0)
+            ce2 = axEI2.contourf(df['E2'].columns, df.index, df[u'E2'],
+                                 levels=np.arange(40, data['data1'].max(),
+                                                  1), cmap=c_0)
+            ce3 = axEI3.contourf(df['E3'].columns, df.index, df[u'E3'],
+                                 levels=np.arange(40, data['data2'].max(),
+                                                  1), cmap=c_0)
+            ce4 = axEI4.contourf(df['E4'].columns, df.index, df[u'E4'],
+                                 levels=np.arange(40, data['data3'].max(),
+                                                  1), cmap=c_0)
+            ce1.ax.invert_yaxis()
+            ce2.ax.invert_yaxis()
+            ce3.ax.invert_yaxis()
+            ce4.ax.invert_yaxis()
+            ce1c = plt.colorbar(mappable=ce1, ax=ce1.ax, pad=0.0125)
+            ce2c = plt.colorbar(mappable=ce2, ax=ce2.ax, pad=0.0125)
+            ce3c = plt.colorbar(mappable=ce3, ax=ce3.ax, pad=0.0125)
+            ce4c = plt.colorbar(mappable=ce4, ax=ce4.ax, pad=0.0125)
+            ce3c.set_label('COUNTS', labelpad=10, y=0.95)
+            axEI3.set_ylabel('Profundidade [m]', labelpad=10, y=0.95)
+            fmt_major_minor(ce4.ax)
+            clean_major_minor(ce1.ax)
+            clean_major_minor(ce2.ax)
+            clean_major_minor(ce3.ax)
+        fig.canvas.draw()
+        self._root.update()
+
+    def plot_figure_CM(self, data, param):
+        # colormap para plot
+        c_map = [plt.cm.jet, plt.cm.hsv, plt.cm.ocean]
+        c_0 = c_map[self._user_CM.get()]
+
+        if plt.fignum_exists(3):
+            plt.close(3)
+            fig = plt.figure(3, facecolor=(1.0, 1.0, 1.0), figsize=(10, 8))
+        else:
+            fig = plt.figure(3, facecolor=(1.0, 1.0, 1.0), figsize=(10, 8))
+        fig.show()
+        # Diagramação e exibição da figura.
+        fig.subplots_adjust(bottom=0.1, right=0.985, top=0.95, hspace=0.1)
+        fig.suptitle(data['tag'].split(u'@')[0] +
+                     self._dbvar.get() + ' COR. MAG.')
+
+        axCM1 = fig.add_subplot(411)
+        axCM2 = fig.add_subplot(412, sharex=axCM1)
+        axCM3 = fig.add_subplot(413, sharex=axCM1)
+        axCM4 = fig.add_subplot(414, sharex=axCM1)
+
+        equaltidx = list()
+        for date in data['t']:
+            equaltidx.append((param['t'] == date).nonzero()[0][0])
+        z = param['data0'][equaltidx] + param['data1'][equaltidx] / 100. + \
+            param['data2'][equaltidx] / 2. + \
+            param['data2'][equaltidx] * data['z']
+        cotas = np.unique(param['data0'])
+        for i in cotas:
+            idx = param['data0'][equaltidx] == i
+            X_axis_range = pd.date_range(start=data['t'][idx].min(),
+                                         end=data['t'][idx].max(),
+                                         freq='H').to_pydatetime()
+            cols = list(set() - set(param['t']))
+
+            time = np.append(data['t'][idx], cols)
+            cols = np.full(np.size(cols), np.nan)
+            camada = np.append(data['z'][idx], cols)
+            profundidade = np.append(z[idx], cols)
+            C1 = np.append(data['data0'][idx], cols)
+            C2 = np.append(data['data1'][idx], cols)
+            C3 = np.append(data['data2'][idx], cols)
+            C4 = np.append(data['data3'][idx], cols)
+            d = {u'time': time, u'camada': camada,
+                 u'C1': C1, u'C2': C2,
+                 u'C3': C3, u'C4': C4,
+                 u'profundidade': profundidade}
+
+            df = pd.DataFrame(d).pivot(u'profundidade', u'time')
+            cc1 = axCM1.contourf(df['C1'].columns, df.index, df['C1'],
+                                 levels=np.arange(data['data0'].min(),
+                                                  data['data0'].max(), 1),
+                                 cmap=c_0)
+            cc2 = axCM2.contourf(df['C2'].columns, df.index, df[u'C2'],
+                                 levels=np.arange(data['data0'].min(),
+                                                  data['data1'].max(), 1),
+                                 cmap=c_0)
+            cc3 = axCM3.contourf(df['C3'].columns, df.index, df[u'C3'],
+                                 levels=np.arange(data['data0'].min(),
+                                                  data['data2'].max(), 1),
+                                 cmap=c_0)
+            cc4 = axCM4.contourf(df['C4'].columns, df.index, df[u'C4'],
+                                 levels=np.arange(data['data0'].min(),
+                                                  data['data3'].max(), 1),
+                                 cmap=c_0)
+            cc1.ax.invert_yaxis()
+            cc2.ax.invert_yaxis()
+            cc3.ax.invert_yaxis()
+            cc4.ax.invert_yaxis()
+            cc1c = plt.colorbar(mappable=cc1, ax=cc1.ax, pad=0.0125)
+            cc2c = plt.colorbar(mappable=cc2, ax=cc2.ax, pad=0.0125)
+            cc3c = plt.colorbar(mappable=cc3, ax=cc3.ax, pad=0.0125)
+            cc4c = plt.colorbar(mappable=cc4, ax=cc4.ax, pad=0.0125)
+            cc3c.set_label('COUNTS', labelpad=10, y=0.95)
+            axCM3.set_ylabel('Profundidade [m]', labelpad=10, y=0.95)
+            fmt_major_minor(cc4.ax)
+            clean_major_minor(cc1.ax)
+            clean_major_minor(cc2.ax)
+            clean_major_minor(cc3.ax)
+        fig.canvas.draw()
+        self._root.update()
 
 
-def set_figure(axSP, axDT, datemn, datemx, index, camada):
-    axSP_c = axSP.twinx()
-    axSP.set_xlim([datemn, datemx])
-    axSP.set_ylim(index.min(), index.max())
-    axDT_c = axDT.twinx()
-    axDT.set_ylim(index.min(), index.max())
-    axSP_c.set_ylim(camada.min(), camada.max())
-    axDT_c.set_ylim(camada.min(), camada.max())
+def clean_major_minor(axe):
+    for label in axe.xaxis.get_majorticklabels():
+        label.set_visible(False)
+    for label in axe.xaxis.get_minorticklabels():
+        label.set_visible(False)
 
-    axSP.set_ylabel('Profundidade [m]')
-    axDT.set_ylabel('Profundidade [m]')
-    axSP_c.set_ylabel('Camadas')
-    axDT_c.set_ylabel('Camadas')
 
-    axSP.invert_yaxis()
-    axDT.invert_yaxis()
-    axSP_c.invert_yaxis()
-    axDT_c.invert_yaxis()
-    axSP_c.figure.canvas.draw()
-
-    axSP.fmt_xdata = DateFormatter('%d/%m/%y %H:%M')
-    if (datemx.toordinal() - datemn.toordinal()) == 0:
-        axSP.xaxis.set_major_locator(HourLocator())
-        axSP.xaxis.set_major_formatter(DateFormatter('%d/%m/%y\n%H:%M'))
-    elif 0 < (datemx.toordinal() - datemn.toordinal()) < 5:
-        axSP.xaxis.set_major_locator(DayLocator())
-        axSP.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
-        axSP.xaxis.set_minor_locator(HourLocator(byhour=(3, 6, 9, 12,
-                                                         15, 18, 21)))
-        axSP.xaxis.set_minor_formatter(DateFormatter('%H:%M'))
-    elif 5 <= (datemx.toordinal() - datemn.toordinal()) < 11:
-        axSP.xaxis.set_major_locator(DayLocator())
-        axSP.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
-        axSP.xaxis.set_minor_locator(HourLocator(byhour=(6, 12, 18)))
-        axSP.xaxis.set_minor_formatter(DateFormatter('%H:%M'))
-    elif 11 <= (datemx.toordinal() - datemn.toordinal()) < 45:
-        axSP.xaxis.set_major_locator(DayLocator())
-        axSP.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
-        axSP.xaxis.set_minor_locator(HourLocator(byhour=(12)))
+def fmt_major_minor(axe):
+    axe.fmt_xdata = DateFormatter('%d/%m/%y %H:%M')
+    x_lim = axe.get_xlim()
+    if (x_lim[-1] - x_lim[0]) == 0:
+        axe.xaxis.set_major_locator(HourLocator())
+        axe.xaxis.set_major_formatter(DateFormatter('%d/%m/%y\n%H:%M'))
+    elif 0 < (x_lim[-1] - x_lim[0]) < 5:
+        axe.xaxis.set_major_locator(DayLocator())
+        axe.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
+        axe.xaxis.set_minor_locator(HourLocator(byhour=(3, 6, 9, 12,
+                                                        15, 18, 21)))
+        axe.xaxis.set_minor_formatter(DateFormatter('%H:%M'))
+    elif 5 <= (x_lim[-1] - x_lim[0]) < 11:
+        axe.xaxis.set_major_locator(DayLocator())
+        axe.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
+        axe.xaxis.set_minor_locator(HourLocator(byhour=(6, 12, 18)))
+        axe.xaxis.set_minor_formatter(DateFormatter('%H:%M'))
+    elif 11 <= (x_lim[-1] - x_lim[0]) < 45:
+        axe.xaxis.set_major_locator(DayLocator(interval=3))
+        axe.xaxis.set_major_formatter(DateFormatter('%d/%m/%y'))
+        axe.xaxis.set_minor_locator(HourLocator(byhour=(12, 00)))
     else:
-        axSP.xaxis.set_minor_locator(MonthLocator())
-        axSP.xaxis.set_major_locator(YearLocator())
-        axSP.xaxis.set_major_formatter(DateFormatter('%Y'))
-    for label in axSP.xaxis.get_majorticklabels():
-        label.set_visible(False)
-    for label in axSP.xaxis.get_minorticklabels():
-        label.set_visible(False)
-    for label in axSP.get_yticklabels():
-        label.set_fontsize(8)
-    for label in axDT.xaxis.get_majorticklabels():
+        axe.xaxis.set_minor_locator(MonthLocator())
+        axe.xaxis.set_major_locator(YearLocator())
+        axe.xaxis.set_major_formatter(DateFormatter('%Y'))
+    for label in axe.xaxis.get_majorticklabels():
         label.set_fontsize(8)
         label.set_ha('right')
         label.set_rotation(45)
-    for label in axDT.xaxis.get_minorticklabels():
+    for label in axe.xaxis.get_minorticklabels():
         label.set_fontsize(7)
         label.set_ha('right')
         label.set_rotation(45)
-    for label in axDT.get_yticklabels():
+    for label in axe.get_yticklabels():
         label.set_fontsize(8)
-    return plt.draw()
 
 
 def main():
+    def callback():
+        if tkMessageBox.askokcancel("Sair", "Deseja realmente sair?"):
+            root.destroy()
+            plt.close('all')
     root = tki.Tk()
     root.title(u"Perfis Temporais em UCDs" +
                u" - OCEANOP" +
                u" [ADCP Profile]")
+    root.protocol("WM_DELETE_WINDOW", callback)
+
     root.resizable(width=False, height=False)
     ADCP_Profile(root)
     root.mainloop()
