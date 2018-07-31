@@ -2,21 +2,21 @@
 __authors__ = ["Márcio Katsumi Yamashita"]
 __email__ = ["marcio.yamashita.tetra_tech@petrobras.com.br"]
 __created_ = ["05-Jan-2017"]
-__modified__ = ["20-Mar-2018 "]
+__modified__ = ["26-Jul-2018 "]
 
 import Tkinter as tki
-import pyocnp
-import numpy as np
-import zlib as zb
 import sys
+import pyocnp
+import zlib as zb
+import numpy as np
 from collections import OrderedDict
 from pandas import DataFrame, Series
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb2hex
 from matplotlib.dates import DateFormatter
 from matplotlib.dates import HourLocator, DayLocator, MonthLocator, YearLocator
 from matplotlib.ticker import FuncFormatter
-from datetime import datetime, timedelta
 
 
 class UCD_confronto:
@@ -41,64 +41,37 @@ class UCD_confronto:
         self._DBVIEW = u"UE6RK"
         # Opções de Parâmetros
         self._modapp = OrderedDict([
-            (u"Int. Correntes", {
-                u"sensores": [(71, u"AQUADOPP"),
-                              (3, u"FSI-2D"),
-                              (4, u"FSI-3D"),
-                              (2, u"ADCP"),
-                              (15, u"HADCP")],
-                u"limite": 0.5}),
-            (u"Dir. Correntes", {
-                u"sensores": [(71, u"AQUADOPP"),
-                              (3, u"FSI-2D"),
-                              (4, u"FSI-3D"),
-                              (2, u"ADCP"),
-                              (15, u"HADCP")],
-                u"limite": 10}),
-            (u"Alt. Ondas", {
-                u"sensores": [(4, u"FSI-3D"),
-                              (5, u"MIROS")],
-                u"limite": 0.5}),
-            (u"Dir. Ondas", {
-                u"sensores": [(4, u"FSI-3D"),
-                              (5, u"MIROS")],
-                u"limite": 20}),
-            (u"Int. anem #1", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 3}),
-            (u"Dir. anem #1", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 15}),
-            (u"Int. anem #2", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 3}),
-            (u"Dir. anem #2", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 15}),
-            (u"Baro #1", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 1}),
-            (u"Baro #2", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 1}),
-            (u"Temp", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 2}),
-            (u"Umid", {
-                u"sensores": [(1, u"YOUNG")],
-                u"limite": 5})])
+            (u"Int. Correntes", {u"sensores": [(71, u"AQUADOPP"),
+                                               (3, u"FSI-2D"),
+                                               (4, u"FSI-3D"),
+                                               (2, u"ADCP"),
+                                               (15, u"HADCP")],
+                                 u"limite": 0.5}),
+            (u"Dir. Correntes", {u"sensores": [(71, u"AQUADOPP"),
+                                               (3, u"FSI-2D"),
+                                               (4, u"FSI-3D"),
+                                               (2, u"ADCP"),
+                                               (15, u"HADCP")],
+                                 u"limite": 10}),
+            (u"Alt. Ondas", {u"sensores": [(4, u"FSI-3D"), (5, u"MIROS")],
+                             u"limite": 0.5}),
+            (u"Dir. Ondas", {u"sensores": [(4, u"FSI-3D"), (5, u"MIROS")],
+                             u"limite": 20}),
+            (u"Int. anem #1", {u"sensores": [(1, u"YOUNG")], u"limite": 3}),
+            (u"Dir. anem #1", {u"sensores": [(1, u"YOUNG")], u"limite": 15}),
+            (u"Int. anem #2", {u"sensores": [(1, u"YOUNG")], u"limite": 3}),
+            (u"Dir. anem #2", {u"sensores": [(1, u"YOUNG")], u"limite": 15}),
+            (u"Baro #1", {u"sensores": [(1, u"YOUNG")], u"limite": 1}),
+            (u"Baro #2", {u"sensores": [(1, u"YOUNG")], u"limite": 1}),
+            (u"Temp", {u"sensores": [(1, u"YOUNG")], u"limite": 2}),
+            (u"Umid", {u"sensores": [(1, u"YOUNG")], u"limite": 5})])
 
         # Perfis de usuário.
         self._userprof = OrderedDict([
             (1, {u"perfil": u"PADRÃO",
-                 # fundo principal aplicativo
-                 u"BGCOLORAPL": (0.750, 0.750, 0.750),
-                 }),
+                 u"BGCOLORAPL": (0.750, 0.750, 0.750)}),
             (2, {u"perfil": u"QUALIFICAÇÃO",
-                 # fundo principal aplicativo
-                 u"BGCOLORAPL": (0.392, 0.584, 0.929),
-                 }),
-        ])
+                 u"BGCOLORAPL": (0.392, 0.584, 0.929)}), ])
 
         # Frame Principal ============================================ #
         # ============================================================ #
@@ -119,16 +92,13 @@ class UCD_confronto:
         uop = self._userprof[self._usergroup.get()]
         menu = tki.Menu(self._menubar, tearoff=0)
         for userid, userprof in self._userprof.iteritems():
-            menu.add_radiobutton(
-                label=userprof[u"perfil"],
-                value=userid,
-                variable=self._usergroup,
-                command=self.setuserprof)
+            menu.add_radiobutton(label=userprof[u"perfil"], value=userid,
+                                 variable=self._usergroup,
+                                 command=self.setuserprof)
         self._menubar.add_cascade(label=u"Perfil", menu=menu)
         menu.add_separator()
         self._lim = tki.BooleanVar()
-        menu.add_checkbutton(label=u"Alterar Limites",
-                             variable=self._lim,
+        menu.add_checkbutton(label=u"Alterar Limites", variable=self._lim,
                              command=self.setuplimits)
         # Associação da barra de opções ao frame principal.
         self._mainfrm.master.config(menu=self._menubar)
@@ -136,6 +106,7 @@ class UCD_confronto:
         # ============================================================ #
         # Frame de Período #
         # ============================================================ #
+        self.fmt = '%d/%m/%Y %H:00:00'
         self._dtfrm = tki.Frame(self._mainfrm, bg=rgb2hex(BGCOLORAPL),
                                 bd=2, relief=tki.GROOVE)
         self._dtfrm.pack(fill=tki.BOTH, padx=6, pady=4, side=tki.TOP)
@@ -151,12 +122,11 @@ class UCD_confronto:
         # escolhida há 3 dias daquele de hoje).
         self._idate = tki.StringVar()
         self._idate.set((datetime.utcnow() -
-                         timedelta(hours=72)).strftime(u"%d/%m/%Y" +
-                                                       u" %H:00:00"))
+                         timedelta(hours=72)).strftime(self.fmt))
         # Variável mutante da data final declarada (previamente
         # escolhida como o dia de hoje).
         self._fdate = tki.StringVar()
-        self._fdate.set(datetime.utcnow().strftime(u"%d/%m/%Y %H:00:00"))
+        self._fdate.set(datetime.utcnow().strftime(self.fmt))
 
         # Rótulo Data Ininal.
         tki.Label(self._datefrm, bd=0, bg=rgb2hex(BGCOLORAPL), fg='white',
@@ -275,8 +245,8 @@ class UCD_confronto:
 
         # Subframe de porcentagens #
         # ============================================================ #
-        self._perfrm = tki.Frame(self._dtfrm, bg=rgb2hex((0.750, 0.750, 0.750)),
-                                 bd=1, relief=tki.GROOVE)
+        self._perfrm = tki.Frame(self._dtfrm, bd=1, relief=tki.GROOVE,
+                                 bg=rgb2hex((0.750, 0.750, 0.750)))
         self._perfrm.pack(padx=1, pady=0, side=tki.LEFT, fill=tki.X,
                           expand=tki.YES)
 
@@ -327,8 +297,8 @@ class UCD_confronto:
 
         # Subframe de diferenças #
         # ============================================================ #
-        self._delfrm = tki.Frame(self._dtfrm, bg=rgb2hex((0.750, 0.750, 0.750)),
-                                 bd=1, relief=tki.GROOVE)
+        self._delfrm = tki.Frame(self._dtfrm, bd=1, relief=tki.GROOVE,
+                                 bg=rgb2hex((0.750, 0.750, 0.750)))
         self._delfrm.pack(padx=1, pady=0, side=tki.LEFT, fill=tki.X,
                           expand=tki.YES)
 
@@ -386,7 +356,7 @@ class UCD_confronto:
         # Menu de BDs disponíveis para consulta.
         self._db_ctrl_opt = tki.OptionMenu(self._ctrl_Sfrm, self._db_ctrl_var,
                                            *self._dbs.keys(),
-                                           command=self.askucds_ctrl)
+                                           command=self.list_ucds_ctrl)
         self._db_ctrl_opt.grid(column=1, row=1, rowspan=1, padx=4, pady=0,
                                sticky=tki.NSEW)
 
@@ -424,8 +394,7 @@ class UCD_confronto:
 
         # Menu de Sensor disponíveis para consulta.
         self._sensor_ctrl_opt = tki.OptionMenu(self._ctrl_Sfrm,
-                                               self._sensor_ctrl_var,
-                                               ())
+                                               self._sensor_ctrl_var, ())
         self._sensor_ctrl_opt.grid(column=1, row=3, rowspan=1, padx=4, pady=0,
                                    sticky=tki.NSEW)
 
@@ -518,7 +487,7 @@ class UCD_confronto:
         self._db_teste_opt = tki.OptionMenu(self._teste_Sfrm,
                                             self._db_teste_var,
                                             *self._dbs.keys(),
-                                            command=self.askucds_teste)
+                                            command=self.list_ucds_teste)
         self._db_teste_opt.grid(column=1, row=1, rowspan=1, padx=4, pady=0,
                                 sticky=tki.NSEW)
 
@@ -733,24 +702,20 @@ class UCD_confronto:
     def moddatevar(self, date, dtdays):
         u""" Aumentar/diminuir data do período de consulta. """
         try:
-            date.set((datetime.strptime(date.get(), "%d/%m/%Y %H:00:00") +
-                      timedelta(dtdays)).strftime(u"%d/%m/%Y %H:00:00"))
-        except:
-            date.set(datetime.utcnow().strftime(u"%d/%m/%Y %H:00:00"))
+            date.set((datetime.strptime(date.get(), self.fmt) +
+                      timedelta(dtdays)).strftime(self.fmt))
+        except Exception:
+            date.set(datetime.utcnow().strftime(self.fmt))
 
     def moddatestr(self, date, dtdays):
         """ Aumentar/diminuir data qualquer. """
         try:
-            return(datetime.strptime(date.get(), "%d/%m/%Y %H:00:00") +
-                   timedelta(dtdays))
-        except:
-            return(datetime.utcnow().strftime(u"%d/%m/%Y %H:00:00"))
+            return(datetime.strptime(date.get(), self.fmt) + timedelta(dtdays))
+        except Exception:
+            return(datetime.utcnow().strftime(self.fmt))
 
-    def askucds_ctrl(self, dbvalue):
-        u""" Listar UCDs disponíveis para consulta no BD. """
-        # Limpeza do menu de UCDs Controle
-        self._ucdslbx_ctrl.delete(0, tki.END)
-
+    def ucds(self, loc, dbvalue):
+        """ Criar lista de UCDs disponíveis para consulta no BD. """
         # Requisição das UCDs ao BD #
         # ============================================================ #
         # Erros esperados/contornados:
@@ -765,144 +730,91 @@ class UCD_confronto:
                      " TB_LOCAL_INSTAL.LOIN_TX_LOCAL")
             ucds = pyocnp.odbqry_all(dbqry,
                                      pyocnp.asciidecrypt(self._dbs[dbvalue]))
-        except:
+        except Exception:
             # Atualização de status: BD inacessivel.
-            self._msg.set(u'%s INDISPONÍVEL' % self._db_ctrl_var.get())
+            self._msg.set(u'%s INDISPONÍVEL' % dbvalue)
             raise
-        # Oferta da lista de UCDs disponíveis.
-        self._ucds_ctrl = ucds
-        for lstid, lstnm in ucds:
-            self._ucdslbx_ctrl.insert(tki.END, lstnm)
-
-        # Oferta e atualização do menu de UCDs.
+        # Limpeza do menu de UCDs
+        getattr(self, '_ucdslbx_{}'.format(loc)).delete(0, tki.END)
+        setattr(self, '_ucds_{}'.format(loc), ucds)
+        for lstid, lstnm in getattr(self, '_ucds_{}'.format(loc)):
+            getattr(self, '_ucdslbx_{}'.format(loc)).insert(tki.END, lstnm)
         self._ucdsmenuvars = list()
+        self.menuaval(getattr(self, '_ucdsmenu{}'.format(loc)),
+                      getattr(self, '_{}_Sfrm_ucdsmenu'.format(loc)),
+                      getattr(self, '_ucdslbx_{}'.format(loc)),
+                      self._ucdsmenuvars)
+        getattr(self, '_{}_Sfrm_ucdsmenu'.format(loc))["cursor"] = "sizing"
+        getattr(self,
+                '_{}_Sfrm_ucdsmenu'.format(loc))["text"] = u"UCDs:\n\u2630"
 
-        self.menuaval(self._ucdsmenuctrl, self._ctrl_Sfrm_ucdsmenu,
-                      self._ucdslbx_ctrl, self._ucdsmenuvars)
-
-        self._ctrl_Sfrm_ucdsmenu["cursor"] = "sizing"
-        self._ctrl_Sfrm_ucdsmenu["text"] = u"UCDs:\n\u2630"
-
-    def askucds_teste(self, dbvalue):
+    def list_ucds_ctrl(self, dbvalue):
         u""" Listar UCDs disponíveis para consulta no BD. """
-        # Limpeza do menu de UCDs Teste
-        self._ucdslbx_teste.delete(0, tki.END)
+        self.ucds('ctrl', dbvalue)
 
-        # Atualização da aplicação para exibição das modificações.
-        self._root.update()
+    def list_ucds_teste(self, dbvalue):
+        u""" Listar UCDs disponíveis para consulta no BD. """
+        self.ucds('teste', dbvalue)
 
-        # Requisição das UCDs ao BD #
-        # ============================================================ #
-        # Erros esperados/contornados:
-        #     [-] falha de comunicação com o BD.
-        try:
-            dbqry = ("SELECT"
-                     " TB_LOCAL_INSTAL.LOIN_CD_LOCAL,"
-                     " UNISTR(TB_LOCAL_INSTAL.LOIN_TX_LOCAL)"
-                     " FROM"
-                     " UE6RK.TB_LOCAL_INSTAL"
-                     " ORDER BY"
-                     " TB_LOCAL_INSTAL.LOIN_TX_LOCAL")
-            ucds = pyocnp.odbqry_all(dbqry,
-                                     pyocnp.asciidecrypt(self._dbs[dbvalue]))
-        except:
-            # Atualização de status: BD inacessivel.
-            self._msg.set(u'%s INDISPONÍVEL' % self._db_ctrl_var.get())
-            raise
-
-        # Oferta da lista de UCDs disponíveis.
-        self._ucds_teste = ucds
-        for lstid, lstnm in ucds:
-            self._ucdslbx_teste.insert(tki.END, lstnm)
-
-        # Oferta e atualização do menu de UCDs.
-        self._ucdsmenuvars = list()
-
-        self.menuaval(self._ucdsmenuteste, self._teste_Sfrm_ucdsmenu,
-                      self._ucdslbx_teste, self._ucdsmenuvars)
-
-        self._teste_Sfrm_ucdsmenu["cursor"] = "sizing"
-        self._teste_Sfrm_ucdsmenu["text"] = u"UCDs:\n\u2630"
-
-    def askparam_ctrl(self, dbvalue):
-        u""" Listar Parâmetros Controle disponíveis para consulta. """
-        # Limpeza do menu de sensores Controle
-        menu = self._sensor_ctrl_opt["menu"]
+    def menu_param(self, loc, param):
+        # Limpeza do menu de sensores
+        menu = getattr(self, '_sensor_{0}_opt'.format(loc))["menu"]
         menu.delete(0, "end")
-        self._sensor_ctrl_var.set(' ')
+        getattr(self, '_sensor_{0}_var'.format(loc)).set(' ')
         # Oferta da lista de sensores disponíveis.
-        self._eqps_ctrl = self._modapp[dbvalue][u"sensores"]
-        # Oferta da lista de Sensores disponíveis.
-        for lstid, lstnm in self._eqps_ctrl:
-            menu.add_command(label=lstnm,
-                             command=lambda value=lstnm: self._sensor_ctrl_var.set(value))
+        setattr(self, '_eqps_{}'.format(loc), self._modapp[param][u"sensores"])
+        for lstid, lstnm in getattr(self, '_eqps_{}'.format(loc)):
+            menu.add_command(label=lstnm, command=lambda value=lstnm:
+                             getattr(self,
+                                     '_sensor_{0}_var'.format(loc)).set(value))
+        # Oferecer/Ocultar da seleção de camada do ADCP.
+        (self.adcp_layer(loc, True) if "Correntes" in
+            getattr(self, '_param_{}_var'.format(loc)).get()
+            else self.adcp_layer(loc, False))
+
+    def askparam_ctrl(self, param):
+        u""" Listar Parâmetros Controle disponíveis para consulta. """
+        self.menu_param('ctrl', param)
         # limite do parâmetro.
-        self._idelrep.set(self._modapp[dbvalue][u"limite"])
+        self._idelrep.set(self._modapp[param][u"limite"])
 
-        # Ocultação da seleção de camada do ADCP.
-        if self._param_ctrl_var.get()[-9::] != u"Correntes":
-            self.asklayers_ctrl(False)
-        else:
-            self.asklayers_ctrl(True)
+    def askparam_teste(self, param):
+        u""" Listar Parâmetros Teste disponíveis para consulta. """
+        self.menu_param('teste', param)
 
-    def askparam_teste(self, dbvalue):
-        u""" Listar Parâmetros Controle disponíveis para consulta. """
-        # Limpeza do menu de sensores Controle
-        menu = self._sensor_teste_opt["menu"]
-        menu.delete(0, "end")
-        self._sensor_teste_var.set(' ')
-        # Oferta da lista de sensores disponíveis.
-        self._eqps_teste = self._modapp[dbvalue][u"sensores"]
-        # Oferta da lista de Sensores disponíveis.
-        for lstid, lstnm in self._eqps_teste:
-            menu.add_command(label=lstnm,
-                             command=lambda value=lstnm: self._sensor_teste_var.set(value))
+    def adcp_layer(self, loc, in_=False):
+        KW = {'_layerlbl': {'column': 1,  'row': 8, 'padx': 0, 'pady': 0,
+                            'columnspan': 1, 'rowspan': 2, 'sticky': tki.E},
+              '_layerent': {'column': 2,  'row': 8, 'padx': 0, 'pady': 0,
+                            'columnspan': 2, 'rowspan': 2, 'sticky': tki.E},
+              '_layerbup': {'column': 4,  'row': 8, 'padx': 0, 'pady': 0,
+                            'columnspan': 1, 'rowspan': 1, 'sticky': tki.S},
+              '_layerbdw': {'column': 4,  'row': 9, 'padx': 0, 'pady': 0,
+                            'columnspan': 1, 'rowspan': 1, 'sticky': tki.N}}
+        [getattr(self, '{0}_{1}'.format(i, loc)).grid(**KW[i]) if in_ else
+            getattr(self,
+                    '{0}_{1}'.format(i, loc)).grid_forget() for i in KW.keys()]
 
-        # Ocultação da seleção de camada do ADCP.
-        if self._param_teste_var.get()[-9::] != u"Correntes":
-            self.asklayers_teste(False)
-        else:
-            self.asklayers_teste(True)
-
-    def asklayers_ctrl(self, adcpsel):
-        u""" Oferecer declaração de camada vertical do ADCP ctrl. """
-        if adcpsel:
-            self._layerlbl_ctrl.grid(column=1, columnspan=1, row=8, rowspan=2,
-                                     padx=0, pady=0, sticky=tki.E)
-            self._layerent_ctrl.grid(column=2, columnspan=2,
-                                     row=8, rowspan=2, padx=0, pady=0,
-                                     sticky=tki.E)
-            self._layerbup_ctrl.grid(column=4, columnspan=1,
-                                     row=8, rowspan=1, padx=0, pady=0,
-                                     sticky=tki.S)
-            self._layerbdw_ctrl.grid(column=4, columnspan=1,
-                                     row=9, rowspan=1, padx=0, pady=0,
-                                     sticky=tki.N)
-        else:
-            self._layerlbl_ctrl.grid_forget()
-            self._layerent_ctrl.grid_forget()
-            self._layerbup_ctrl.grid_forget()
-            self._layerbdw_ctrl.grid_forget()
-
-    def asklayers_teste(self, adcpsel):
-        u""" Oferecer declaração de camada vertical do ADCP teste. """
-        if adcpsel:
-            self._layerlbl_teste.grid(column=1, columnspan=1, row=8, rowspan=2,
-                                      padx=0, pady=0, sticky=tki.E)
-            self._layerent_teste.grid(column=2, columnspan=2,
-                                      row=8, rowspan=2, padx=0, pady=0,
-                                      sticky=tki.E)
-            self._layerbup_teste.grid(column=4, columnspan=1,
-                                      row=8, rowspan=1, padx=0, pady=0,
-                                      sticky=tki.S)
-            self._layerbdw_teste.grid(column=4, columnspan=1,
-                                      row=9, rowspan=1, padx=0, pady=0,
-                                      sticky=tki.N)
-        else:
-            self._layerlbl_teste.grid_forget()
-            self._layerent_teste.grid_forget()
-            self._layerbup_teste.grid_forget()
-            self._layerbdw_teste.grid_forget()
+    def mk_qry(self, loc):
+        try:
+            setattr(self, 'dbqry', self._dbs[
+                getattr(self, '_db_{0}_var'.format(loc)).get()])
+            ucd_id = getattr(self, '_ucds_{0}'.format(loc))[
+                getattr(self, '_ucdslbx_{0}'.format(loc)).curselection()[0]][0]
+            setattr(self, 'ucdqry', ucd_id)
+            eqp_id = [id for id, nm in getattr(self, '_eqps_{0}'.format(loc))
+                      if nm == getattr(
+                          self, '_sensor_{0}_var'.format(loc)).get()][0]
+            setattr(self, 'eqpqry', eqp_id)
+            setattr(
+                self, 'lyrqry', getattr(self, '_layer_{0}'.format(loc)).get())
+            Data = self.GET_data(
+                self.ucdqry, getattr(self, '_param_{0}_var'.format(loc)).get())
+            setattr(self, '_msg_{0}'.format(loc),
+                    'NOK' if Data == 'error' else 'OK')
+            return Data
+        except Exception:
+            setattr(self, '_msg_{0}'.format(loc), 'NOK')
 
     def askplot(self):
         """ Busca os dados e faz o plots. """
@@ -924,73 +836,53 @@ class UCD_confronto:
         self._msg.set(u"Aguarde")
         self._root.update()
 
-        try:
-            self.dbqry = self._dbs[self._db_ctrl_var.get()]
-            self.ucdqry = self._ucds_ctrl[
-                self._ucdslbx_ctrl.curselection()[0]][0]
-            self.eqpqry = [lstid for lstid, lstnm in self._eqps_ctrl if lstnm == self._sensor_ctrl_var.get()][
-                0]
-            self.lyrqry = self._layer_ctrl.get()
-            Data_control = self.GET_data(self.ucdqry,
-                                         par=self._param_ctrl_var.get())
-            self._msg_ctrl = 'NOK' if Data_control == 'error' else 'OK'
-        except:
-            self._msg_ctrl = 'NOK'
-
-        try:
-            self.dbqry = self._dbs[self._db_teste_var.get()]
-            self.ucdqry = self._ucds_teste[
-                self._ucdslbx_teste.curselection()[0]][0]
-            self.eqpqry = [lstid for lstid, lstnm in self._eqps_teste if lstnm == self._sensor_teste_var.get()][
-                0]
-            self.lyrqry = self._layer_teste.get()
-            Data_teste = self.GET_data(self.ucdqry,
-                                       par=self._param_teste_var.get())
-            self._msg_teste = 'NOK' if Data_teste == 'error' else 'OK'
-        except:
-            self._msg_teste = 'NOK'
+        Data_control = self.mk_qry('ctrl')
+        Data_teste = self.mk_qry('teste')
         self.ax.set_title(' ')
         if self._msg_ctrl == 'OK' and self._msg_teste == 'OK':
             self.ax.plot(Data_control['t'], Data_control['data0'], '.-g')
-            lgnd.append(Data_control['tag'] +
-                        ' @ %s' % self._db_ctrl_var.get())
-            self.ax.set_ylabel(Data_control['data0quant'] + u" (" +
-                               Data_control['data0unit'] + u")", fontsize=12)
+            lgnd.append('{} @ {}'.format(Data_control['tag'],
+                                         self._db_ctrl_var.get()))
+            self.ax.set_ylabel(u'{} ({})'.format(Data_control['data0quant'],
+                                                 Data_control['data0unit']),
+                               fontsize=12)
             self.df = DataFrame({'CTRL': Series(Data_control['data0'],
                                                 index=Data_control['t']),
                                  'TESTE': Series(Data_teste['data0'],
                                                  index=Data_teste['t'])})
             if self._param_ctrl_var.get()[:9] == "Int. anem":
                 idx = Data_control['data0'] <= 3
-                if sum(idx)>0:
+                if sum(idx) > 0:
                     self.ax.plot(Data_control['t'][idx],
                                  Data_control['data0'][idx], 'og')
                     lgnd.append('Vento abaixo de 3m/s')
             if Data_control['data0quant'] == Data_teste['data0quant']:
                 self.df['diff'] = abs(self.df.CTRL - self.df.TESTE)
                 if self._param_ctrl_var.get()[:9] == "Dir. anem":
-                    self.df['diff'][self.df['diff']>180]=360-self.df['diff'][self.df['diff']>180]
+                    idx = self.df['diff'] > 180
+                    self.df['diff'][idx] = (360 - self.df['diff'][idx])
                 self.ax.plot(Data_teste['t'], Data_teste['data0'], '.-y')
-                self.ax.set_title(u'Diferença média absoluta '
-                                  '(%1.2f' u'\u00B1' '%1.2f)'
-                                  % (self.df['diff'].mean(),
-                                     self.df['diff'].std()) +
-                                  Data_control['data0unit'])
-                lgnd.append(Data_teste['tag'] +
-                            ' @ %s' % self._db_teste_var.get())
+                ttl = (u'Diferença média absoluta ({:1.2f} \u00B1 {:1.2f})'
+                       '{}'.format(self.df['diff'].mean(), self.df[
+                           'diff'].std(), Data_control['data0unit']))
+                self.ax.set_title(ttl)
+                lgnd.append('{} @ {}'.format(Data_teste['tag'],
+                                             self._db_teste_var.get()))
                 if self._param_teste_var.get()[:9] == "Int. anem":
                     idx = Data_teste['data0'] <= 3
-                    if sum(idx)>0:
+                    if sum(idx) > 0:
                         self.ax.plot(Data_teste['t'][idx],
                                      Data_teste['data0'][idx], 'oy')
                         lgnd.append('Vento abaixo de 3m/s')
                 if self._usergroup.get() == 2:
                     rep, idx = self.count_rep(self._idelrep.get(), lgnd)
                     falhas = self.count_fail(Data_teste)
-                    ttl = u'[%1.1f%%] Falhas na série de Teste\n[%1.1f%%] Reprovações acima do Limite de ' % (
-                        falhas, rep) + self._idelrep.get() + Data_control['data0unit']
-                    self.ax.plot(self.df.index[idx.values], self.df[
-                                 'TESTE'][idx], 'Dk')
+                    ttl = (u'[{:1.1f}%] Falhas na série de Teste\n'
+                           u'[{:1.1f}%] Reprovações acima do Limite de'
+                           '{}{}').format(falhas, rep, self._idelrep.get(),
+                                          Data_control['data0unit'])
+                    self.ax.plot(self.df.index[idx.values],
+                                 self.df['TESTE'][idx], 'Dk')
                     if (falhas >= float(self._iperfail.get())) or (rep >= float(self._iperrep.get())):
                         self.ax.set_title(ttl, color='r')
                     else:
@@ -1001,12 +893,12 @@ class UCD_confronto:
             else:
                 self.ax0 = self.ax.twinx()
                 self.ax0.tick_params(axis='y', colors='y')
-                self.ax0.set_ylabel(Data_teste['data0quant'] + u" (" +
-                                    Data_teste['data0unit'] + u")", fontsize=12,
-                                    color='y')
+                self.ax0.set_ylabel(u'{} ({})'.format(Data_teste['data0quant'],
+                                                      Data_teste['data0unit']),
+                                    fontsize=12, color='y')
                 self.ax0.plot(Data_teste['t'], Data_teste['data0'], '.-y')
-                lgnd.append(Data_teste['tag'] +
-                            ' @ %s' % self._db_teste_var.get())
+                lgnd.append('{} @ {}'.format(Data_teste['tag'],
+                                             self._db_teste_var.get()))
                 if self._param_teste_var.get()[:3] == "Dir":
                     self.ax0.set_ylim((0., 360.))
                 if self._param_teste_var.get()[:3] == "Bar":
@@ -1014,36 +906,35 @@ class UCD_confronto:
                      FuncFormatter(lambda x, p: '%1.2f' % x)))
                 if self._param_teste_var.get()[:9] == "Int. anem":
                     idx = Data_teste['data0'] <= 3
-                    if sum(idx)>0:
+                    if sum(idx) > 0:
                         self.ax0.plot(Data_teste['t'][idx], Data_teste[
                                       'data0'][idx], 'oy')
                         lgnd.append('Vento abaixo de 3m/s')
                 if self._usergroup.get() == 2:
                     falhas = self.count_fail(Data_teste)
+                    ttl = u'[{:1.1f}%] Falhas na série de Teste'.format(falhas)
                     if falhas >= float(self._iperfail.get()):
-                        self.ax.set_title(
-                            u'[%1.1f%%] Falhas na série de Teste' % (falhas), color='r')
+                        self.ax.set_title(ttl, color='r')
                     else:
-                        self.ax.set_title(
-                            u'[%1.1f%%] Falhas na série de Teste' % (falhas))
-                self.ax0.legend(lgnd, framealpha=0.6, loc=0)
-
-            self.ax.set_xlabel('Consulta em: %s UTC' %datetime.utcnow().strftime(u"%d/%m/%Y %H:%M:%S"))
+                        self.ax.set_title(ttl)
+                lns = self.ax.lines + self.ax0.lines
+                plt.legend(lns, lgnd, framealpha=0.6, loc=0)
+            self.ax.set_xlabel('Consulta em: {:{f}} UTC'.format(
+                datetime.utcnow(), f="%d/%m/%Y %H:%M:%S"))
             if self._param_ctrl_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
             if self._param_ctrl_var.get()[:3] == "Bar":
                 (self.ax.get_yaxis().set_major_formatter(
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
-
-            self.ax.legend(lgnd, framealpha=0.6, loc=0)
             self.setaxdate(fig.axes[0], self.df.index.min(),
                            self.df.index.max())
         elif self._msg_ctrl == 'OK' and self._msg_teste == 'NOK':
             self.ax.plot(Data_control['t'], Data_control['data0'], '.-g')
-            lgnd.append(Data_control['tag'] +
-                        ' @ %s' % self._db_ctrl_var.get())
-            self.ax.set_ylabel(Data_control['data0quant'] + u" (" +
-                               Data_control['data0unit'] + u")", fontsize=12)
+            lgnd.append('{} @ {}'.format(Data_control['tag'],
+                                         self._db_ctrl_var.get()))
+            self.ax.set_ylabel(u'{} ({})'.format(Data_control['data0quant'],
+                                                 Data_control['data0unit']),
+                               fontsize=12)
             if self._param_ctrl_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
             if self._param_ctrl_var.get()[:3] == "Bar":
@@ -1051,19 +942,22 @@ class UCD_confronto:
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
             if self._param_ctrl_var.get()[:9] == "Int. anem":
                 idx = Data_control['data0'] <= 3
-                if sum(idx)>0:
+                if sum(idx) > 0:
                     self.ax.plot(Data_control['t'][idx],
                                  Data_control['data0'][idx], 'og')
                     lgnd.append('Vento abaixo de 3m/s')
-            self.ax.set_xlabel('Consulta em: %s UTC' %datetime.utcnow().strftime(u"%d/%m/%Y %H:%M:%S"))
+            self.ax.set_xlabel('Consulta em: {:{f}} UTC'.format(
+                datetime.utcnow(), f="%d/%m/%Y %H:%M:%S"))
             self.ax.legend(lgnd, framealpha=0.6, loc=0)
             self.setaxdate(fig.axes[0], Data_control['t'].min(),
                            Data_control['t'].max())
         elif self._msg_ctrl == 'NOK' and self._msg_teste == 'OK':
             self.ax.plot(Data_teste['t'], Data_teste['data0'], '.-y')
-            lgnd.append(Data_teste['tag'] + ' @ %s' % self._db_teste_var.get())
-            self.ax.set_ylabel(Data_teste['data0quant'] + u" (" +
-                               Data_teste['data0unit'] + u")", fontsize=12)
+            lgnd.append('{} @ {}'.format(Data_teste['tag'],
+                                         self._db_teste_var.get()))
+            self.ax.set_ylabel(u'{} ({})'.format(Data_teste['data0quant'],
+                                                 Data_teste['data0unit']),
+                               fontsize=12)
             if self._param_teste_var.get()[:3] == "Dir":
                 self.ax.set_ylim((0., 360.))
             if self._param_teste_var.get()[:3] == "Bar":
@@ -1071,20 +965,20 @@ class UCD_confronto:
                  FuncFormatter(lambda x, p: '%1.2f' % x)))
             if self._param_teste_var.get()[:9] == "Int. anem":
                 idx = Data_teste['data0'] <= 3
-                if sum(idx)>0:
+                if sum(idx) > 0:
                     self.ax.plot(Data_teste['t'][idx],
                                  Data_teste['data0'][idx], 'oy')
                     lgnd.append('Vento abaixo de 3m/s')
             if self._usergroup.get() == 2:
                 falhas = self.count_fail(Data_teste)
                 lgnd.append('Reprovações')
+                ttl = u'[{:1.1f}%] Falhas na série de Teste'.format(falhas)
                 if falhas >= float(self._iperfail.get()):
-                    self.ax.set_title(
-                        u'[%1.1f%%] Falhas na série de Teste' % (falhas), color='r')
+                    self.ax.set_title(ttl, color='r')
                 else:
-                    self.ax.set_title(
-                        u'[%1.1f%%] Falhas na série de Teste' % (falhas))
-            self.ax.set_xlabel('Consulta em: %s UTC' %datetime.utcnow().strftime(u"%d/%m/%Y %H:%M:%S"))                    
+                    self.ax.set_title(ttl)
+            self.ax.set_xlabel('Consulta em: {:{f}} UTC'.format(
+                datetime.utcnow(), f="%d/%m/%Y %H:%M:%S"))
             self.ax.legend(lgnd, framealpha=0.6, loc=0)
             self.setaxdate(fig.axes[0], Data_teste['t'].min(),
                            Data_teste['t'].max())
@@ -1097,23 +991,23 @@ class UCD_confronto:
                           % (self._msg_ctrl, self._msg_teste))
             # Conferência de conformidade de datas.
             try:
-                datetime.strptime(self._idate.get(), "%d/%m/%Y %H:%M:%S")
+                datetime.strptime(self._idate.get(), self.fmt)
             except Exception:
                 self._msg.set(u'Corrigir Data')
                 self._idatent.config(fg='red')
                 self._qrymsgbox.config(fg='purple')
             try:
-                datetime.strptime(self._fdate.get(), "%d/%m/%Y %H:%M:%S")
+                datetime.strptime(self._fdate.get(), self.fmt)
             except Exception:
                 self._msg.set(u'Corrigir Data')
                 self._fdatent.config(fg='red')
                 self._qrymsgbox.config(fg='purple')
-            if (datetime.strptime(self._idate.get(), "%d/%m/%Y %H:%M:%S") >
-                    datetime.strptime(self._fdate.get(), "%d/%m/%Y %H:%M:%S")):
+            if (datetime.strptime(self._idate.get(), self.fmt) >
+                    datetime.strptime(self._fdate.get(), self.fmt)):
                 self._idatent.config(fg='red')
                 self._qrymsgbox.config(fg='purple')
                 self._msg.set(u'Corrigir Intervalo \nErroneo')
-        except:
+        except Exception:
             pass
 
         fig.canvas.draw()
@@ -1160,8 +1054,8 @@ class UCD_confronto:
                         pp(ev, mn, mnb, lb, lv))
 
     def count_fail(self, data):
-        dtmn = datetime.strptime(self._idate.get(), "%d/%m/%Y %H:%M:%S")
-        dtmx = datetime.strptime(self._fdate.get(), "%d/%m/%Y %H:%M:%S")
+        dtmn = datetime.strptime(self._idate.get(), self.fmt)
+        dtmx = datetime.strptime(self._fdate.get(), self.fmt)
         R_expect = (int((dtmx - dtmn).total_seconds() //
                         3600) + 1)
         R_received = float(len(data['data0']))
@@ -1175,136 +1069,104 @@ class UCD_confronto:
         R_received = float(len(self.df['TESTE']))
         N_nan = (R_received -
                  np.count_nonzero(np.isnan(self.df['TESTE'])))
-        rep = 100 * (sum(idx)  / N_nan)
+        rep = 100 * (sum(idx) / N_nan)
         if rep > 0:
             lgnd.append(u'Reprovações')
         return rep, idx
 
     # Funções de buscas
     # ============================================================ #
-    def GET_data(self, ucdqry, par):
+    def GET_data(self, ucdid, par):
         u""" Busca de dados da seleção. """
         try:
+            dataSpan = [self._idate.get(), self._fdate.get()]
+            eqp = self.eqpqry
+            bd = self.dbqry
             if par == u"Int. Correntes":
-                if self.eqpqry == 2:
-                    Data = pyocnp.adcp_ocndbqry(ucdqry,
-                                                [self.lyrqry, self.lyrqry],
-                                                [self._idate.get(),
-                                                 self._fdate.get()], ['HCSP'],
-                                                self.eqpqry, self.dbqry)
+                binSpan = [self.lyrqry, self.lyrqry]
+                if eqp == 2:
+                    Data = pyocnp.adcp_ocndbqry(ucdid, binSpan, dataSpan,
+                                                ['HCSP'], eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] +
                              ' <ADCP c:%s>' % self.lyrqry)
-                elif self.eqpqry == 15:
-                    Data = pyocnp.hadcp_ocndbqry(ucdqry,
-                                                 [self.lyrqry, self.lyrqry],
-                                                 [self._idate.get(),
-                                                  self._fdate.get()], ['HCSP'],
-                                                 self.eqpqry, self.dbqry)
+                elif eqp == 15:
+                    Data = pyocnp.hadcp_ocndbqry(ucdid, binSpan, dataSpan,
+                                                 ['HCSP'], eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] +
                              ' <HADCP c:%s>' % self.lyrqry)
-                elif self.eqpqry == 3:
-                    Data = pyocnp.ocea2d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['HCSP'], self.eqpqry,
-                                                  self.dbqry)
+                elif eqp == 3:
+                    Data = pyocnp.ocea2d_ocndbqry(ucdid, dataSpan, ['HCSP'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
-                elif self.eqpqry == 71:
-                    Data = pyocnp.ocea2d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['HCSP'], self.eqpqry,
-                                                  self.dbqry)
+                elif eqp == 71:
+                    Data = pyocnp.ocea2d_ocndbqry(ucdid, dataSpan, ['HCSP'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split()[0] + ' <AQUADOPP>')
-                elif self.eqpqry == 4:
-                    Data = pyocnp.ocea3d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['HCSP'], self.eqpqry,
-                                                  self.dbqry)
+                elif eqp == 4:
+                    Data = pyocnp.ocea3d_ocndbqry(ucdid, dataSpan, ['HCSP'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
             elif par == u"Dir. Correntes":
-                if self.eqpqry == 2:
-                    Data = pyocnp.adcp_ocndbqry(ucdqry,
-                                                [self.lyrqry, self.lyrqry],
-                                                [self._idate.get(),
-                                                 self._fdate.get()], ['HCDT'],
-                                                self.eqpqry, self.dbqry)
+                binSpan = [self.lyrqry, self.lyrqry]
+                if eqp == 2:
+                    Data = pyocnp.adcp_ocndbqry(ucdid, binSpan, dataSpan,
+                                                ['HCDT'], eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] +
                              ' <ADCP c:%s>' % self.lyrqry)
-                elif self.eqpqry == 15:
-                    Data = pyocnp.hadcp_ocndbqry(ucdqry,
-                                                 [self.lyrqry, self.lyrqry],
-                                                 [self._idate.get(),
-                                                  self._fdate.get()], ['HCDT'],
-                                                 self.eqpqry, self.dbqry)
+                elif eqp == 15:
+                    Data = pyocnp.hadcp_ocndbqry(ucdid, binSpan, dataSpan,
+                                                 ['HCDT'], eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] +
                              ' <HADCP c:%s>' % self.lyrqry)
-                elif self.eqpqry == 3:
-                    Data = pyocnp.ocea2d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['HCDT'], self.eqpqry,
-                                                  self.dbqry)
+                elif eqp == 3:
+                    Data = pyocnp.ocea2d_ocndbqry(ucdid, dataSpan, ['HCDT'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
-                elif self.eqpqry == 71:
-                    Data = pyocnp.ocea2d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['HCDT'], self.eqpqry,
-                                                  self.dbqry)
+                elif eqp == 71:
+                    Data = pyocnp.ocea2d_ocndbqry(ucdid, dataSpan, ['HCDT'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split()[0] + ' <AQUADOPP>')
-                elif self.eqpqry == 4:
-                    Data = pyocnp.ocea3d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['HCDT'], self.eqpqry,
-                                                  self.dbqry)
+                elif eqp == 4:
+                    Data = pyocnp.ocea3d_ocndbqry(ucdid, dataSpan, ['HCDT'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
             elif par == u"Alt. Ondas":
-                if self.eqpqry == 4:
-                    Data = pyocnp.ocea3d_ocndbqry(ucdqry,
-                                                  [self._idate.get(),
-                                                   self._fdate.get()], ['VAVH'],
-                                                  self.eqpqry, self.dbqry)
+                if eqp == 4:
+                    Data = pyocnp.ocea3d_ocndbqry(ucdid, dataSpan, ['VAVH'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
-                elif self.eqpqry == 5:
-                    Data = pyocnp.miros_ocndbqry(ucdqry, [self._idate.get(),
-                                                          self._fdate.get()],
-                                                 ['VAVH'], self.eqpqry,
-                                                 self.dbqry)
+                elif eqp == 5:
+                    Data = pyocnp.miros_ocndbqry(ucdid, dataSpan, ['VAVH'],
+                                                 eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
             elif par == u"Dir. Ondas":
-                if self.eqpqry == 4:
-                    Data = pyocnp.ocea3d_ocndbqry(ucdqry, [self._idate.get(),
-                                                           self._fdate.get()],
-                                                  ['VPEDM'], self.eqpqry,
-                                                  self.dbqry)
+                if eqp == 4:
+                    Data = pyocnp.ocea3d_ocndbqry(ucdid, dataSpan, ['VPEDM'],
+                                                  eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
-                elif self.eqpqry == 5:
-                    Data = pyocnp.miros_ocndbqry(ucdqry, [self._idate.get(),
-                                                          self._fdate.get()],
-                                                 ['VPEDM'], self.eqpqry,
-                                                 self.dbqry)
+                elif eqp == 5:
+                    Data = pyocnp.miros_ocndbqry(ucdid, dataSpan, ['VPEDM'],
+                                                 eqp, bd)
                     Data.put(u'tag', Data['tag'].split('@')[0] + ' ' +
                              Data['tag'].split()[-3])
             elif par == u"Int. anem #1":
-                Data = pyocnp.meteo_ocndbqry(ucdqry, [self._idate.get(),
-                                                      self._fdate.get()],
-                                             ['WSPD'], self.eqpqry,
-                                             self.dbqry)
+                Data = pyocnp.meteo_ocndbqry(ucdid, dataSpan, ['WSPD'],
+                                             eqp, bd)
                 Data.put(u'tag', Data['tag'].split('@')[0] + ' <anem #1>')
             elif par == u"Dir. anem #1":
-                Data = pyocnp.meteo_ocndbqry(ucdqry, [self._idate.get(),
-                                                      self._fdate.get()],
-                                             ['WDIR'], self.eqpqry,
-                                             self.dbqry)
+                Data = pyocnp.meteo_ocndbqry(ucdid, dataSpan, ['WDIR'],
+                                             eqp, bd)
                 Data.put(u'tag', Data['tag'].split('@')[0] + ' <anem #1>')
             elif par == u"Int. anem #2":
-                tag = (pyocnp.ucdname_byid_ocndb(ucdqry,
-                                                 str_dbaccess=self.dbqry)[0] +
-                       ' <anem #2>')
+                tag = (pyocnp.ucdname_byid_ocndb(
+                    ucdid, str_dbaccess=bd)[0] + ' <anem #2>')
                 self.ax.set_title('Buscando %s - Aguarde -' % tag)
                 plt.draw()
                 quant = (u'intensidade vento horizontal')
@@ -1321,7 +1183,7 @@ class UCD_confronto:
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO ="
                          " UE6RK.TB_YOUNG_MESTRE.YOME_DT_AQUISICAO AND"
                          " UE6RK.TB_YOUNG_ST.LOIN_CD_LOCAL=" +
-                         unicode(ucdqry) + " AND"
+                         unicode(ucdid) + " AND"
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO >= TO_DATE('" +
                          self._idate.get() + "', 'DD/MM/YYYY HH24:MI:SS') AND"
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO <= TO_DATE('" +
@@ -1330,8 +1192,7 @@ class UCD_confronto:
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO"
                          " ORDER BY"
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO")
-                qryresults = pyocnp.odbqry_all(dbqry,
-                                               pyocnp.asciidecrypt(self.dbqry))
+                qryresults = pyocnp.odbqry_all(dbqry, pyocnp.asciidecrypt(bd))
                 qryarray = np.array(qryresults)
                 if not any(qryarray[:, 1]):
                     Data = 'error'
@@ -1343,9 +1204,8 @@ class UCD_confronto:
                     Data.put(u'data0quant', quant)
                     Data.put(u'data0unit', u'm/s')
             elif par == u"Dir. anem #2":
-                tag = (pyocnp.ucdname_byid_ocndb(ucdqry,
-                                                 str_dbaccess=self.dbqry)[0] +
-                       " <anem #2>")
+                tag = (pyocnp.ucdname_byid_ocndb(
+                    ucdid, str_dbaccess=bd)[0] + " <anem #2>")
                 self.ax.set_title('Buscando %s - Aguarde -' % tag)
                 plt.draw()
                 dbqry = ("SELECT"
@@ -1363,7 +1223,7 @@ class UCD_confronto:
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO ="
                          " UE6RK.TB_YOUNG_MESTRE.YOME_DT_AQUISICAO AND"
                          " UE6RK.TB_YOUNG_ST.LOIN_CD_LOCAL =" +
-                         unicode(ucdqry) + " AND"
+                         unicode(ucdid) + " AND"
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO >= TO_DATE('" +
                          self._idate.get() + "', 'DD/MM/YYYY HH24:MI:SS') AND"
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO <= TO_DATE('" +
@@ -1372,8 +1232,7 @@ class UCD_confronto:
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO"
                          " ORDER BY"
                          " UE6RK.TB_YOUNG_ST.YOME_DT_AQUISICAO")
-                qryresults = pyocnp.odbqry_all(dbqry,
-                                               pyocnp.asciidecrypt(self.dbqry))
+                qryresults = pyocnp.odbqry_all(dbqry, pyocnp.asciidecrypt(bd))
                 qryarray = np.array(qryresults)
                 quant = (u'direção vento horizontal')
                 if not any(qryarray[:, 1]):
@@ -1381,33 +1240,28 @@ class UCD_confronto:
                 else:
                     Data = pyocnp.OcnpRootData()
                     for i, j in enumerate(qryarray[:, -1]):
-                        if (qryarray[i, 1] != None) & (qryarray[i, 3] != None):
-                            qryarray[i, 1] = (qryarray[i, 1] +
-                                              qryarray[i, 2] +
-                                              qryarray[i, 3]) % \
-                                360 if j == 'S' else (qryarray[i, 1] +
-                                                      qryarray[i, 2]) % \
-                                360
-                        else:
-                            qryarray[i, 1] = (qryarray[i, 1] +
-                                              qryarray[i, 2]) % \
-                                360 if j == 'S' else (qryarray[i, 1] +
-                                                      qryarray[i, 2]) % \
-                                360
+                        wdir = qryarray[i, 1]
+                        gyro = qryarray[i, 3]
+                        apro = qryarray[i, 2]
+                        if (wdir is not None) & (gyro is not None):
+                            wdir = (wdir + gyro) % \
+                                360 if j == 'S' else (wdir + apro) % 360
+                        elif wdir is None:
+                            wdir = None
+                        elif gyro is None:
+                            wdir = None if j == 'S' else (wdir + apro) % 360
                     Data.put(u't', qryarray[:, 0])
                     Data.put(u'tag', tag)
                     Data.put(u'data0', qryarray[:, 1].astype('Float64'))
                     Data.put(u'data0quant', quant)
                     Data.put(u'data0unit', u"\u00b0")
             elif par == u"Baro #1":
-                Data = pyocnp.meteo_ocndbqry(ucdqry,
-                                             [self._idate.get(),
-                                              self._fdate.get()], ['ATMS'],
-                                             self.eqpqry, self.dbqry)
+                Data = pyocnp.meteo_ocndbqry(ucdid, dataSpan, ['ATMS'],
+                                             eqp, bd)
                 Data.put(u'tag', Data['tag'].split('@')[0] + ' <baro #1>')
             elif par == u"Baro #2":
-                tag = (pyocnp.ucdname_byid_ocndb(ucdqry,
-                                                 str_dbaccess=self.dbqry)[0] +
+                tag = (pyocnp.ucdname_byid_ocndb(ucdid,
+                                                 str_dbaccess=bd)[0] +
                        ' <baro #2>')
                 self.ax.set_title('Buscando %s - Aguarde -' % tag)
                 plt.draw()
@@ -1418,7 +1272,7 @@ class UCD_confronto:
                          " UE6RK.TB_IMPORTACOES"
                          " WHERE"
                          " UE6RK.TB_IMPORTACOES.LOIN_CD_LOCAL =" +
-                         unicode(ucdqry) + " AND"
+                         unicode(ucdid) + " AND"
                          " UE6RK.TB_IMPORTACOES.EQUI_CD_EQUIPAMENT = 1 AND"
                          " UE6RK.TB_IMPORTACOES.IMPO_DT_AQUISICAO >="
                          " TO_DATE('" + self._idate.get() +
@@ -1428,8 +1282,7 @@ class UCD_confronto:
                          "', 'DD/MM/YYYY HH24:MI:SS')"
                          " ORDER BY"
                          " UE6RK.TB_IMPORTACOES.IMPO_DT_AQUISICAO")
-                qryresults = pyocnp.odbqry_all(dbqry,
-                                               pyocnp.asciidecrypt(self.dbqry))
+                qryresults = pyocnp.odbqry_all(dbqry, pyocnp.asciidecrypt(bd))
                 R = 287
                 g = 9.81
                 press2, t = [], []
@@ -1523,18 +1376,16 @@ class UCD_confronto:
                     Data.put(u'data0unit', u"hPa")
                     Data.put(u'data0quant', u"pressão atmosférica nm")
             elif par == u"Temp":
-                Data = pyocnp.meteo_ocndbqry(ucdqry, [self._idate.get(),
-                                                      self._fdate.get()],
-                                             ['DRYT'], self.eqpqry, self.dbqry)
+                Data = pyocnp.meteo_ocndbqry(ucdid, dataSpan, ['DRYT'],
+                                             eqp, bd)
                 Data.put(u'tag', Data['tag'].split('@')[0] +
                          ' ' + Data['tag'].split()[-3])
             elif par == u"Umid":
-                Data = pyocnp.meteo_ocndbqry(ucdqry, [self._idate.get(),
-                                                      self._fdate.get()],
-                                             ['RELH'], self.eqpqry, self.dbqry)
+                Data = pyocnp.meteo_ocndbqry(ucdid, dataSpan, ['RELH'],
+                                             eqp, bd)
                 Data.put(u'tag', Data['tag'].split('@')[0] +
                          ' ' + Data['tag'].split()[-3])
-        except:
+        except Exception:
             # Captura e exibição de exceção.
             errtype, ermairvalue, errtbk = sys.exc_info()
         return Data if 'Data' in locals() else 'error'
